@@ -25,10 +25,11 @@
 			'.lf-filter-section { padding-top: 10px; }' +
 			'.lf-center { text-align: center; }' +
 			'.lf-input { width: 40px; }' +
-			'#lf-apply-filter { border-radius: 6px; }' +
+			'.lf-filter-button { border-radius: 6px; margin: 0px 10px; font-size: 0.8em; }' +
 			'.lf-list { margin: 0px; padding: 0px; }' +
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
-			'.lf-list-item label, .lf-list-item input { display: block; }' +
+			'.lf-list-item span, .lf-list-item input { display: block; }' +
+			'.lf-list-item-label { font-size: 0.9em; }' +
 		'</style>';
 
 	var html =
@@ -36,13 +37,13 @@
 			'<div id="lf-main" class="pure-u-1">' +
 				'<div class="lf-title">Items to Learn</div>' +
 				'<div class="lf-list">' +
-					'<div class="lf-list-item"><span>Radicals</span><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
-					'<div class="lf-list-item"><span>Kanji</span><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
-					'<div class="lf-list-item"><span>Vocab</span><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
-					'<div class="lf-list-item"><span>Shuffle?</span><input id="lf-shuffle" type="checkbox" /></div>' +
+					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">部首</span><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">漢字</span><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">単語</span><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
 				'</div>' +
 				'<div class="lf-filter-section">' +
-					'<input type="button" value="Filter" id="lf-apply-filter"></input>' +
+					'<input type="button" value="Filter" id="lf-apply-filter" class="lf-filter-button"></input>' +
+					'<input type="button" value="Filter and Shuffle" id="lf-apply-filter-and-shuffle" class="lf-filter-button"></input>' +
 				'</div>' +
 			'</div>' +
 		'</div>';
@@ -69,8 +70,7 @@
 		return {
 			'radicals': getFilterCount(radicalsJStorageKey, '#lf-radicals'),
 			'kanji': getFilterCount(kanjiJStorageKey, '#lf-kanji'),
-			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab'),
-			'shuffle': getShuffleValue()
+			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab')
 		};
 	}
 
@@ -88,11 +88,6 @@
 			return 0;
 
 		return value;
-	}
-
-	function getShuffleValue() {
-		var el = $('#lf-shuffle');
-		return el.prop('checked');
 	}
 
 	$('div[id*="loading"]:visible').on('hide', function() {
