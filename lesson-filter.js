@@ -2,7 +2,7 @@
 // @name          WaniKani Lesson Filter
 // @namespace     https://www.wanikani.com
 // @description   Specify how many lessons of each type you want to take.
-// @version       1.0.0
+// @version       0.1.0
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
