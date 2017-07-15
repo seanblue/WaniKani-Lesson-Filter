@@ -7,6 +7,10 @@
 // @grant         none
 // ==/UserScript==
 
+// Catch events on hide.
+// http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
+(function ($) {$.each(['hide'], function (i, ev) { var el = $.fn[ev]; $.fn[ev] = function () { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
+
 (function() {
 	'use strict';
 
@@ -21,7 +25,7 @@
 		'</style>';
 
 	var html =
-		'<div id="lf-main-outer" class="ui pure-g lf-center">' +
+		'<div id="lf-main-outer" class="pure-g lf-center">' +
 			'<div class="pure-u-1-3"></div>' +
 			'<div id="lf-main" class="pure-u-1-3">' +
 				'<div class="lf-title">Items to Learn</div>' +
@@ -51,14 +55,14 @@
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
+		//$('#batch-items ul').before(html); // This version may avoid the issue with the 'fixed' class.
 	}
-	
+
 	$('div[id*="loading"]:visible').on('hide', function() {
 		setupUI();
 	});
-	
+
 	$('.lf-js-apply-filter').on('click', function() {
 		alert('test');
 	});
-
 })();
