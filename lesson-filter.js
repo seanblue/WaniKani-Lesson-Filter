@@ -22,34 +22,27 @@
 			'.lf-center { text-align: center; }' +
 			'.lf-input { width: 40px; }' +
 			'#lf-apply-filter { border-radius: 6px; }' +
+			'.lf-list { display: inline-block; list-style: none; border-radius: 6px; text-align: center; margin: 0px; padding: 0px; }' +
+			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; margin: 5px; padding: 5px 15px; }' +
+			'.lf-list-item label, .lf-list-item input { display: block; }' +
 		'</style>';
 
 	var html =
 		'<div id="lf-main-outer" class="pure-g lf-center">' +
-			'<div class="pure-u-1-3"></div>' +
-			'<div id="lf-main" class="pure-u-1-3">' +
+			'<div class="pure-u-1-4"></div>' +
+			'<div id="lf-main" class="pure-u-1-2">' +
 				'<div class="lf-title">Items to Learn</div>' +
-				'<div class="pure-g">' +
-					'<div class="pure-u-1-4"></div>' +
-					'<div class="pure-u-1-8">Radicals</div>' +
-					'<div class="pure-u-1-8">Kanji</div>' +
-					'<div class="pure-u-1-8">Vocab</div>' +
-					'<div class="pure-u-1-8">Shuffle?</div>' +
-					'<div class="pure-u-1-4"></div>' +
-				'</div>' +
-				'<div class="pure-g">' +
-					'<div class="pure-u-1-4"></div>' +
-					'<div class="pure-u-1-8"><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></div>' +
-					'<div class="pure-u-1-8"><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></div>' +
-					'<div class="pure-u-1-8"><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></div>' +
-					'<div class="pure-u-1-8"><input id="lf-shuffle" type="checkbox" class="pure-checkbox" /></div>' +
-					'<div class="pure-u-1-4"></div>' +
-				'</div>' +
+				'<ul class="lf-list">' +
+					'<li class="lf-list-item"><label>Radicals</label><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></li>' +
+					'<li class="lf-list-item"><label>Kanji</label><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></li>' +
+					'<li class="lf-list-item"><label>Vocab</label><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input pure-input" /></li>' +
+					'<li class="lf-list-item"><label>Shuffle?</label><input id="lf-shuffle" type="checkbox" class="pure-checkbox" /></li>' +
+				'</ul>' +
 				'<div class="lf-filter-section">' +
 					'<input type="button" value="Filter" id="lf-apply-filter" class="pure-button-small"></input>' +
 				'</div>' +
 			'</div>' +
-			'<div class="pure-u-1-3"></div>' +
+			'<div class="pure-u-1-4"></div>' +
 		'</div>';
 
 	function setupUI() {
