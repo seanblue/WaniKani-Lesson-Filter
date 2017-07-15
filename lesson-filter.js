@@ -33,8 +33,7 @@
 
 	var html =
 		'<div id="lf-main-outer" class="pure-g lf-center">' +
-			'<div class="pure-u-1-4"></div>' +
-			'<div id="lf-main" class="pure-u-1-2">' +
+			'<div id="lf-main" class="pure-u-1">' +
 				'<div class="lf-title">Items to Learn</div>' +
 				'<ul class="lf-list">' +
 					'<li class="lf-list-item"><label>Radicals</label><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></li>' +
@@ -46,7 +45,6 @@
 					'<input type="button" value="Filter" id="lf-apply-filter" class="pure-button-small"></input>' +
 				'</div>' +
 			'</div>' +
-			'<div class="pure-u-1-4"></div>' +
 		'</div>';
 
 	function setupUI() {
@@ -82,7 +80,7 @@
 		var el = $(selector);
 		var rawValue = el.val();
 		var value = parseInt(rawValue);
-		
+
 		if (isNaN(value) || value > currentCount)
 			return currentCount;
 
