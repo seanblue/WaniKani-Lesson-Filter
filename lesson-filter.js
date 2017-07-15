@@ -63,7 +63,7 @@
 
 	function applyFilter() {
 		var filterCounts = getFilterCounts();
-		
+
 		// TODO: Apply filters.
 	}
 
@@ -71,7 +71,8 @@
 		return {
 			'radicals': getFilterCount(radicalsJStorageKey, '#lf-radicals'),
 			'kanji': getFilterCount(kanjiJStorageKey, '#lf-kanji'),
-			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab')
+			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab'),
+			'shuffle': getShuffleValue()
 		};
 	}
 
@@ -81,6 +82,7 @@
 		var el = $(selector);
 		var rawValue = el.val();
 		var value = parseInt(rawValue);
+		
 		if (isNaN(value) || value > currentCount)
 			return currentCount;
 
@@ -88,6 +90,11 @@
 			return 0;
 
 		return value;
+	}
+
+	function getShuffleValue() {
+		var el = $('#lf-shuffle');
+		return el.prop('checked');
 	}
 
 	$('div[id*="loading"]:visible').on('hide', function() {
