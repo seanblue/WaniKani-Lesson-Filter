@@ -14,6 +14,10 @@
 (function() {
 	'use strict';
 
+	var radicalsJStorageKey = 'l/count/rad';
+	var kanjiJStorageKey = 'l/count/kan';
+	var vocabJStorageKey = 'l/count/voc';
+
 	var style =
 		'<style>' +
 			'#lf-main-outer { padding: 10px 0px; border: 1px solid black; }' +
@@ -51,11 +55,43 @@
 		//$('#batch-items ul').before(html); // This version may avoid the issue with the 'fixed' class.
 	}
 
+	function setupEvents() {
+		$('#lf-apply-filter').on('click', function() {
+			applyFilter();
+		});
+	}
+
+	function applyFilter() {
+		var filterCounts = getFilterCounts();
+		
+		// TODO: Apply filters.
+	}
+
+	function getFilterCounts() {
+		return {
+			'radicals': getFilterCount(radicalsJStorageKey, '#lf-radicals'),
+			'kanji': getFilterCount(kanjiJStorageKey, '#lf-kanji'),
+			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab')
+		};
+	}
+
+	function getFilterCount(jStorageKey, selector) {
+		var currentCount = $.jStorage.get(jStorageKey);
+
+		var el = $(selector);
+		var rawValue = el.val();
+		var value = parseInt(rawValue);
+		if (isNaN(value) || value > currentCount)
+			return currentCount;
+
+		if (value < 0)
+			return 0;
+
+		return value;
+	}
+
 	$('div[id*="loading"]:visible').on('hide', function() {
 		setupUI();
-	});
-
-	$('.lf-js-apply-filter').on('click', function() {
-		alert('test');
+		setupEvents();
 	});
 })();
