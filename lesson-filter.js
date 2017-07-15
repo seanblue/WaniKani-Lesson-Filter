@@ -20,15 +20,15 @@
 
 	var style =
 		'<style>' +
-			'#lf-main { padding: 10px 0px; border: 1px solid black; text-align: center; }' +
-			'.lf-title { font-size: 1.2em; font-weight: bold; }' +
+			'#lf-main { padding: 10px 0px; border-radius: 6px; margin: 5px; text-align: center; font-size: 0.8em; background-color: #444; color: #fff; }' +
+			'#lf-main input:focus { outline: none; }' +
+			'.lf-title { font-size: 1.5em; font-weight: bold; }' +
 			'.lf-filter-section { padding-top: 10px; }' +
-			'.lf-input { width: 40px; }' +
-			'.lf-filter-button { border-radius: 6px; margin: 0px 10px; font-size: 0.8em; }' +
+			'.lf-input { width: 40px; color: #fff; }' +
+			'.lf-filter-button { border-radius: 6px; margin: 0px 10px; }' +
 			'.lf-list { margin: 0px; padding: 0px; }' +
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
-			'.lf-list-item-label { font-size: 0.9em; }' +
 		'</style>';
 
 	var html =
@@ -36,16 +36,16 @@
 			'<div class="lf-title">Items to Learn</div>' +
 			'<div class="lf-list">' +
 				'<div class="lf-list-item">' +
-					'<span lang="ja" class="lf-list-item-label">部首</span>' +
-					'<input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'<span lang="ja">部首</span>' +
+					'<input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input radical" />' +
 				'</div>' +
 				'<div class="lf-list-item">' +
-					'<span lang="ja" class="lf-list-item-label">漢字</span>' +
-					'<input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'<span lang="ja">漢字</span>' +
+					'<input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input kanji" />' +
 				'</div>' +
 				'<div class="lf-list-item">' +
-					'<span lang="ja" class="lf-list-item-label">単語</span>' +
-					'<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'<span lang="ja">単語</span>' +
+					'<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input vocabulary" />' +
 				'</div>' +
 			'</div>' +
 			'<div class="lf-filter-section">' +
