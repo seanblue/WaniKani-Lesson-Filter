@@ -37,9 +37,18 @@
 			'<div id="lf-main" class="pure-u-1">' +
 				'<div class="lf-title">Items to Learn</div>' +
 				'<div class="lf-list">' +
-					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">部首</span><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
-					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">漢字</span><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
-					'<div class="lf-list-item"><span lang="ja" class="lf-list-item-label">単語</span><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item">' +
+						'<span lang="ja" class="lf-list-item-label">部首</span>' +
+						'<input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'</div>' +
+					'<div class="lf-list-item">' +
+						'<span lang="ja" class="lf-list-item-label">漢字</span>' +
+						'<input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'</div>' +
+					'<div class="lf-list-item">' +
+						'<span lang="ja" class="lf-list-item-label">単語</span>' +
+						'<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" />' +
+					'</div>' +
 				'</div>' +
 				'<div class="lf-filter-section">' +
 					'<input type="button" value="Filter" id="lf-apply-filter" class="lf-filter-button"></input>' +
