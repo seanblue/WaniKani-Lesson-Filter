@@ -27,7 +27,7 @@
 			'.lf-input { width: 40px; }' +
 			'#lf-apply-filter { border-radius: 6px; }' +
 			'.lf-list { margin: 0px; padding: 0px; }' +
-			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; margin: 5px; padding: 5px 15px; }' +
+			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item label, .lf-list-item input { display: block; }' +
 		'</style>';
 
@@ -35,14 +35,14 @@
 		'<div id="lf-main-outer" class="pure-g lf-center">' +
 			'<div id="lf-main" class="pure-u-1">' +
 				'<div class="lf-title">Items to Learn</div>' +
-				'<ul class="lf-list">' +
-					'<li class="lf-list-item"><label>Radicals</label><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></li>' +
-					'<li class="lf-list-item"><label>Kanji</label><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></li>' +
-					'<li class="lf-list-item"><label>Vocab</label><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></li>' +
-					'<li class="lf-list-item"><label>Shuffle?</label><input id="lf-shuffle" type="checkbox" /></li>' +
-				'</ul>' +
+				'<div class="lf-list">' +
+					'<div class="lf-list-item"><span>Radicals</span><input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item"><span>Kanji</span><input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item"><span>Vocab</span><input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input" /></div>' +
+					'<div class="lf-list-item"><span>Shuffle?</span><input id="lf-shuffle" type="checkbox" /></div>' +
+				'</div>' +
 				'<div class="lf-filter-section">' +
-					'<input type="button" value="Filter" id="lf-apply-filter" class="pure-button-small"></input>' +
+					'<input type="button" value="Filter" id="lf-apply-filter"></input>' +
 				'</div>' +
 			'</div>' +
 		'</div>';
