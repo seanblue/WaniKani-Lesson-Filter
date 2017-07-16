@@ -137,7 +137,20 @@
 	}
 
 	function applyShuffle() {
-		
+		var queue = getQueue();
+		shuffle(queue);
+		updateQueue(queue);
+	}
+
+	function shuffle(array) {
+		// https://stackoverflow.com/a/12646864
+		// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+		for (var i = array.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var temp = array[i];
+			array[i] = array[j];
+			array[j] = temp;
+		}
 	}
 
 	function getQueue() {
