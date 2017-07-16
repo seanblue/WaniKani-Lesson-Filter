@@ -19,6 +19,10 @@
 	var vocabKey = 'l/count/voc';
 	var activeQueueKey = 'l/activeQueue';
 	var inactiveQueueKey = 'l/lessonQueue';
+	var batchSizeKey = 'l/batchSize';
+	var radicalCountKey = 'l/count/rad';
+	var kanjiCountKey = 'l/count/kan';
+	var vocabCountKey = 'l/count/voc';
 
 	var style =
 		'<style>' +
@@ -73,7 +77,17 @@
 
 		var queue = getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
 		filterQueue(queue, filterCounts);
-		// TODO: Apply filters.
+
+		var batchSize = getWaniKaniData(batchSizeKey);
+		var activeQueue = queue.slice(0, batchSize);
+		var inactiveQueue = queue.slice(batchSize);
+
+		setWaniKaniData(activeQueueKey, activeQueue);
+		setWaniKaniData(inactiveQueueKey, inactiveQueue);
+		
+		setWaniKaniData(radicalCountKey, filterCounts.radicals);
+		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
+		setWaniKaniData(vocabCountKey, filterCounts.vocab);
 	}
 
 	function getFilterCounts() {
