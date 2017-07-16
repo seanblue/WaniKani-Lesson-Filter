@@ -28,7 +28,7 @@
 			'.lf-title { font-size: 1.5em; font-weight: bold; }' +
 			'.lf-filter-section { padding-top: 10px; }' +
 			'.lf-input { width: 40px; color: #fff; }' +
-			'.lf-filter-button { border-radius: 6px; margin: 0px 10px; }' +
+			'.lf-button { border-radius: 6px; margin: 0px 10px; }' +
 			'.lf-list { margin: 0px; padding: 0px; }' +
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
@@ -52,8 +52,8 @@
 				'</div>' +
 			'</div>' +
 			'<div class="lf-filter-section">' +
-				'<input type="button" value="Filter" id="lf-apply-filter" class="lf-filter-button"></input>' +
-				'<input type="button" value="Filter and Shuffle" id="lf-apply-filter-and-shuffle" class="lf-filter-button"></input>' +
+				'<input type="button" value="Filter" id="lf-apply-filter" class="lf-button"></input>' +
+				'<input type="button" value="Shuffle" id="lf-apply-shuffle" class="lf-button"></input>' +
 			'</div>' +
 		'</div>';
 
@@ -65,6 +65,7 @@
 
 	function setupEvents() {
 		$('#lf-apply-filter').on('click', applyFilter);
+		$('#lf-apply-shuffle').on('click', applyShuffle);
 	}
 
 	function applyFilter() {
@@ -75,14 +76,10 @@
 			return;
 		}
 
-		var queue = getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
+		var queue = getQueue();
 		filterQueue(queue, filterCounts);
 
-		var batchSize = getWaniKaniData(batchSizeKey);
-		var activeQueue = queue.slice(0, batchSize);
-		var inactiveQueue = queue.slice(batchSize);
-
-		updateQueue(activeQueue, inactiveQueue);
+		updateQueue(queue);
 		updateCounts(filterCounts);
 	}
 
@@ -139,7 +136,19 @@
 		}
 	}
 
-	function updateQueue(activeQueue, inactiveQueue) {
+	function applyShuffle() {
+		
+	}
+
+	function getQueue() {
+		return getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
+	}
+
+	function updateQueue(queue) {
+		var batchSize = getWaniKaniData(batchSizeKey);
+		var activeQueue = queue.slice(0, batchSize);
+		var inactiveQueue = queue.slice(batchSize);
+
 		// Must update the inactive queue after the active queue to get the UI to update properly.
 		setWaniKaniData(activeQueueKey, activeQueue);
 		setWaniKaniData(inactiveQueueKey, inactiveQueue);
