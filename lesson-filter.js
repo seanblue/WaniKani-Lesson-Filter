@@ -14,9 +14,11 @@
 (function() {
 	'use strict';
 
-	var radicalsJStorageKey = 'l/count/rad';
-	var kanjiJStorageKey = 'l/count/kan';
-	var vocabJStorageKey = 'l/count/voc';
+	var radicalsKey = 'l/count/rad';
+	var kanjiKey = 'l/count/kan';
+	var vocabKey = 'l/count/voc';
+	var activeQueueKey = 'l/activeQueue';
+	var inactiveQueueKey = 'l/lessonQueue';
 
 	var style =
 		'<style>' +
@@ -69,19 +71,21 @@
 	function applyFilter() {
 		var filterCounts = getFilterCounts();
 
+		var queue = getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
+		filterQueue(queue, filterCounts);
 		// TODO: Apply filters.
 	}
 
 	function getFilterCounts() {
 		return {
-			'radicals': getFilterCount(radicalsJStorageKey, '#lf-radicals'),
-			'kanji': getFilterCount(kanjiJStorageKey, '#lf-kanji'),
-			'vocab': getFilterCount(vocabJStorageKey, '#lf-vocab')
+			'radicals': getFilterCount(radicalsKey, '#lf-radicals'),
+			'kanji': getFilterCount(kanjiKey, '#lf-kanji'),
+			'vocab': getFilterCount(vocabKey, '#lf-vocab')
 		};
 	}
 
-	function getFilterCount(jStorageKey, selector) {
-		var currentCount = $.jStorage.get(jStorageKey);
+	function getFilterCount(key, selector) {
+		var currentCount = getWaniKaniData(key);
 
 		var el = $(selector);
 		var rawValue = el.val();
@@ -94,6 +98,38 @@
 			return 0;
 
 		return value;
+	}
+
+	function filterQueue(queue, filterCounts) {
+		filterQueueForType(queue, 'rad', filterCounts.radicals);
+		filterQueueForType(queue, 'kan', filterCounts.kanji);
+		filterQueueForType(queue, 'voc', filterCounts.vocab);
+	}
+
+	function filterQueueForType(queue, typePropertyName, itemsToKeep) {
+		var i;
+		var itemsKept = 0;
+		for (i = 0; i < queue.length; i++) {
+			if (!queue[i][typePropertyName]) {
+				continue;
+			}
+
+			if (itemsKept < itemsToKeep) {
+				itemsKept++;
+				continue;
+			}
+
+			queue.splice(i, 1);
+			i--;
+		}
+	}
+
+	function getWaniKaniData(key) {
+		return $.jStorage.get(key);
+	}
+
+	function setWaniKaniData(key, value) {
+		return $.jStorage.set(key, value);
 	}
 
 	$('div[id*="loading"]:visible').on('hide', function() {
