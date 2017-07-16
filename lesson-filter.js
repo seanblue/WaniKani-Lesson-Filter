@@ -82,12 +82,8 @@
 		var activeQueue = queue.slice(0, batchSize);
 		var inactiveQueue = queue.slice(batchSize);
 
-		setWaniKaniData(activeQueueKey, activeQueue);
-		setWaniKaniData(inactiveQueueKey, inactiveQueue);
-
-		setWaniKaniData(radicalCountKey, filterCounts.radicals);
-		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
-		setWaniKaniData(vocabCountKey, filterCounts.vocab);
+		updateQueue(activeQueue, inactiveQueue);
+		updateCounts(filterCounts);
 	}
 
 	function getFilterCounts() {
@@ -141,6 +137,18 @@
 			queue.splice(i, 1);
 			i--;
 		}
+	}
+
+	function updateQueue(activeQueue, inactiveQueue) {
+		// Must update the inactive queue after the active queue to get the UI to update properly.
+		setWaniKaniData(activeQueueKey, activeQueue);
+		setWaniKaniData(inactiveQueueKey, inactiveQueue);
+	}
+
+	function updateCounts(filterCounts) {
+		setWaniKaniData(radicalCountKey, filterCounts.radicals);
+		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
+		setWaniKaniData(vocabCountKey, filterCounts.vocab);
 	}
 
 	function getWaniKaniData(key) {
