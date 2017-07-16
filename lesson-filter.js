@@ -165,6 +165,8 @@
 		// Must update the inactive queue after the active queue to get the UI to update properly.
 		setWaniKaniData(activeQueueKey, activeQueue);
 		setWaniKaniData(inactiveQueueKey, inactiveQueue);
+
+		$('#batch-items li:first').click();
 	}
 
 	function updateCounts(filterCounts) {
