@@ -70,6 +70,11 @@
 	function applyFilter() {
 		var filterCounts = getFilterCounts();
 
+		if (filterCounts.nolessons) {
+			alert('You cannot remove all lessons');
+			return;
+		}
+
 		var queue = getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
 		filterQueue(queue, filterCounts);
 
@@ -86,10 +91,15 @@
 	}
 
 	function getFilterCounts() {
+		var radicalCount = getFilterCount(radicalCountKey, '#lf-radicals');
+		var kanjiCount = getFilterCount(kanjiCountKey, '#lf-kanji');
+		var vocabCount = getFilterCount(vocabCountKey, '#lf-vocab');
+
 		return {
-			'radicals': getFilterCount(radicalCountKey, '#lf-radicals'),
-			'kanji': getFilterCount(kanjiCountKey, '#lf-kanji'),
-			'vocab': getFilterCount(vocabCountKey, '#lf-vocab')
+			'radicals': radicalCount,
+			'kanji': kanjiCount,
+			'vocab': vocabCount,
+			'nolessons': radicalCount === 0 && kanjiCount === 0 && vocabCount === 0
 		};
 	}
 
