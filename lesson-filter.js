@@ -65,7 +65,7 @@
 	function setupEvents() {
 		$('#lf-apply-filter').on('click', applyFilter);
 		$('#lf-apply-shuffle').on('click', applyShuffle);
-		$('#lf-main').on("keyup.lessonScreen", captureKeyCommands);
+		$('#lf-main').on('keyup.lessonScreen', '.lf-input:focus', disableWaniKaniKeyCommands);
 	}
 
 	function applyFilter() {
@@ -175,15 +175,8 @@
 		setWaniKaniData(vocabCountKey, filterCounts.vocab);
 	}
 
-	function captureKeyCommands(e) {
-		if ($('.lf-input:focus').length === 0) {
-			// When not focused in the inputs, allow WaniKani key commands.
-			return true;
-		}
-
-		// Otherwise, disable WaniKani key commands.
+	function disableWaniKaniKeyCommands(e) {
 		e.stopPropagation();
-		return true;
 	}
 
 	function getWaniKaniData(key) {
