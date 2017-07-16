@@ -65,7 +65,7 @@
 	function setupEvents() {
 		$('#lf-apply-filter').on('click', applyFilter);
 		$('#lf-apply-shuffle').on('click', applyShuffle);
-		$('#lf-main').on('keyup.lessonScreen', '.lf-input:focus', disableWaniKaniKeyCommands);
+		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
 	}
 
 	function applyFilter() {
