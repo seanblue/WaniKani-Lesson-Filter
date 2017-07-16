@@ -14,9 +14,6 @@
 (function() {
 	'use strict';
 
-	var radicalsKey = 'l/count/rad';
-	var kanjiKey = 'l/count/kan';
-	var vocabKey = 'l/count/voc';
 	var activeQueueKey = 'l/activeQueue';
 	var inactiveQueueKey = 'l/lessonQueue';
 	var batchSizeKey = 'l/batchSize';
@@ -67,9 +64,7 @@
 	}
 
 	function setupEvents() {
-		$('#lf-apply-filter').on('click', function() {
-			applyFilter();
-		});
+		$('#lf-apply-filter').on('click', applyFilter);
 	}
 
 	function applyFilter() {
@@ -84,7 +79,7 @@
 
 		setWaniKaniData(activeQueueKey, activeQueue);
 		setWaniKaniData(inactiveQueueKey, inactiveQueue);
-		
+
 		setWaniKaniData(radicalCountKey, filterCounts.radicals);
 		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
 		setWaniKaniData(vocabCountKey, filterCounts.vocab);
@@ -92,9 +87,9 @@
 
 	function getFilterCounts() {
 		return {
-			'radicals': getFilterCount(radicalsKey, '#lf-radicals'),
-			'kanji': getFilterCount(kanjiKey, '#lf-kanji'),
-			'vocab': getFilterCount(vocabKey, '#lf-vocab')
+			'radicals': getFilterCount(radicalCountKey, '#lf-radicals'),
+			'kanji': getFilterCount(kanjiCountKey, '#lf-kanji'),
+			'vocab': getFilterCount(vocabCountKey, '#lf-vocab')
 		};
 	}
 
