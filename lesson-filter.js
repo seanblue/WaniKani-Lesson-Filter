@@ -60,12 +60,12 @@
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
-		//$('#batch-items ul').before(html); // This version may avoid the issue with the 'fixed' class.
 	}
 
 	function setupEvents() {
 		$('#lf-apply-filter').on('click', applyFilter);
 		$('#lf-apply-shuffle').on('click', applyShuffle);
+		$('#lf-main').on("keyup.lessonScreen", captureKeyCommands);
 	}
 
 	function applyFilter() {
@@ -173,6 +173,17 @@
 		setWaniKaniData(radicalCountKey, filterCounts.radicals);
 		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
 		setWaniKaniData(vocabCountKey, filterCounts.vocab);
+	}
+
+	function captureKeyCommands(e) {
+		if ($('.lf-input:focus').length === 0) {
+			// When not focused in the inputs, allow WaniKani key commands.
+			return true;
+		}
+
+		// Otherwise, disable WaniKani key commands.
+		e.stopPropagation();
+		return true;
 	}
 
 	function getWaniKaniData(key) {
