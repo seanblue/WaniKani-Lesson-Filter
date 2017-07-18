@@ -7,7 +7,7 @@
 // @grant         none
 // ==/UserScript==
 
-// Catch events on hide.
+// Catch additional events.
 // http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
 (function ($) {$.each(['hide'], function (i, ev) { var el = $.fn[ev]; $.fn[ev] = function () { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
 
