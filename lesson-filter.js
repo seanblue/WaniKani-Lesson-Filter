@@ -9,12 +9,13 @@
 
 // Catch additional events.
 // http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
-(function($) {$.each(['hide', 'addClass'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
+(function($) {$.each(['hide', 'addClass', 'prop'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
 
 (function() {
 	'use strict';
 
 	var classAddedEvent = 'lessonFilter.classAdded';
+	var propModifiedEvent = 'lessonFilter.propModified';
 
 	var activeQueueKey = 'l/activeQueue';
 	var inactiveQueueKey = 'l/lessonQueue';
@@ -71,6 +72,9 @@
 
 		setClassAddedEventToTrigger();
 		$(document).on(classAddedEvent, '#batch-items', fixBatchItemsOverlay);
+
+		setPropModifiedEventToTrigger();
+		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 	}
 
 	function applyFilter() {
@@ -204,8 +208,23 @@
 		};
 	}
 
+	function setPropModifiedEventToTrigger() {
+		var originalPropMethod = $.fn.prop;
+
+		$.fn.prop = function() {
+			var result = originalPropMethod.apply(this, arguments);
+			$(this).trigger(propModifiedEvent);
+
+			return result;
+		};
+	}
+
 	function fixBatchItemsOverlay(e) {
 		$(e.currentTarget).removeClass('fixed');
+	}
+
+	function enableInputs(e) {
+		$(e.currentTarget).prop('disabled', false);
 	}
 
 	$('div[id*="loading"]:visible').on('hide', function() {
