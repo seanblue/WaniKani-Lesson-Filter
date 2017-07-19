@@ -75,7 +75,7 @@
 		$('#lf-apply-shuffle').on('click', applyShuffle);
 		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
 
-		$(document).on(classAddedEvent, '#batch-items', fixBatchItemsOverlay);
+		$(document).on(classAddedEvent, '#batch-items.fixed', fixBatchItemsOverlay);
 		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 	}
 
