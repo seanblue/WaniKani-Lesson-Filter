@@ -218,7 +218,7 @@
 		$(e.currentTarget).prop('disabled', false);
 	}
 
-	$('div[id*="loading"]:visible').on('hide', function() {
+	$('#loading-screen:visible').on('hide', function() {
 		addEventTriggers();
 		setupUI();
 		setupEvents();
