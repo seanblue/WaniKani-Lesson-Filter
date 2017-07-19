@@ -60,6 +60,11 @@
 			'</div>' +
 		'</div>';
 
+	function addEventTriggers() {
+		setEventToTrigger('addClass', classAddedEvent);
+		setEventToTrigger('prop', propModifiedEvent);
+	}
+
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
@@ -70,10 +75,7 @@
 		$('#lf-apply-shuffle').on('click', applyShuffle);
 		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
 
-		setClassAddedEventToTrigger();
 		$(document).on(classAddedEvent, '#batch-items', fixBatchItemsOverlay);
-
-		setPropModifiedEventToTrigger();
 		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 	}
 
@@ -197,23 +199,12 @@
 	}
 
 	// https://stackoverflow.com/a/14084869
-	function setClassAddedEventToTrigger() {
-		var originalAddClassMethod = $.fn.addClass;
+	function setEventToTrigger(jQueryMethodName, eventName) {
+		var originalMethod = $.fn[jQueryMethodName];
 
-		$.fn.addClass = function() {
-			var result = originalAddClassMethod.apply(this, arguments);
-			$(this).trigger(classAddedEvent);
-
-			return result;
-		};
-	}
-
-	function setPropModifiedEventToTrigger() {
-		var originalPropMethod = $.fn.prop;
-
-		$.fn.prop = function() {
-			var result = originalPropMethod.apply(this, arguments);
-			$(this).trigger(propModifiedEvent);
+		$.fn[jQueryMethodName] = function() {
+			var result = originalMethod.apply(this, arguments);
+			$(this).trigger(eventName);
 
 			return result;
 		};
@@ -228,6 +219,7 @@
 	}
 
 	$('div[id*="loading"]:visible').on('hide', function() {
+		addEventTriggers();
 		setupUI();
 		setupEvents();
 	});
