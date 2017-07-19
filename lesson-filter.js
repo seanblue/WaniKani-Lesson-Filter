@@ -25,6 +25,8 @@
 	var kanjiCountKey = 'l/count/kan';
 	var vocabCountKey = 'l/count/voc';
 
+	var batchItemsSelector = '#batch-items.fixed';
+
 	var style =
 		'<style>' +
 			'#lf-main { padding: 10px 0px; border-radius: 6px; margin: 5px; text-align: center; font-size: 0.8em; background-color: #444; color: #fff; }' +
@@ -69,6 +71,8 @@
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
+
+		fixBatchItemsOverlay($(batchItemsSelector));
 	}
 
 	function setupEvents() {
@@ -76,7 +80,7 @@
 		$('#lf-apply-shuffle').on('click', applyShuffle);
 		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
 
-		$(document).on(classAddedEvent, '#batch-items.fixed', fixBatchItemsOverlay);
+		$(document).on(classAddedEvent, batchItemsSelector, fixBatchItemsOverlayCallback);
 		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 	}
 
@@ -213,8 +217,12 @@
 		};
 	}
 
-	function fixBatchItemsOverlay(e) {
-		$(e.currentTarget).removeClass('fixed');
+	function fixBatchItemsOverlayCallback(e) {
+		fixBatchItemsOverlay($(e.currentTarget));
+	}
+
+	function fixBatchItemsOverlay(el) {
+		el.removeClass('fixed');
 	}
 
 	function enableInputs(e) {
