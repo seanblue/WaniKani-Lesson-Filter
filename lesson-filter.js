@@ -9,7 +9,7 @@
 
 // Catch additional events.
 // http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
-(function($) {$.each(['hide', 'addClass', 'prop'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
+(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
 
 (function() {
 	'use strict';
