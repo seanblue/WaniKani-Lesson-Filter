@@ -16,6 +16,7 @@
 
 	var classAddedEvent = 'lessonFilter.classAdded';
 	var propModifiedEvent = 'lessonFilter.propModified';
+	var queueUpdatedEvent = 'lessonFilter.queueUpdated';
 
 	var activeQueueKey = 'l/activeQueue';
 	var inactiveQueueKey = 'l/lessonQueue';
@@ -178,6 +179,8 @@
 		setWaniKaniData(inactiveQueueKey, inactiveQueue);
 
 		$('#batch-items li:first').click();
+
+		$(document).trigger(queueUpdatedEvent);
 	}
 
 	function updateCounts(filterCounts) {
