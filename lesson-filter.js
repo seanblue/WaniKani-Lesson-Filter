@@ -25,8 +25,6 @@
 	var kanjiCountKey = 'l/count/kan';
 	var vocabCountKey = 'l/count/voc';
 
-	var batchItemsSelector = '#batch-items.fixed';
-
 	var style =
 		'<style>' +
 			'#lf-main { padding: 10px 0px; border-radius: 6px; margin: 5px; text-align: center; font-size: 0.8em; background-color: #444; color: #fff; }' +
@@ -63,25 +61,15 @@
 			'</div>' +
 		'</div>';
 
-	function addEventTriggers() {
-		setEventToTrigger('addClass', classAddedEvent);
-		setEventToTrigger('prop', propModifiedEvent);
-	}
-
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
-
-		fixBatchItemsOverlay($(batchItemsSelector));
 	}
 
 	function setupEvents() {
 		$('#lf-apply-filter').on('click', applyFilter);
 		$('#lf-apply-shuffle').on('click', applyShuffle);
 		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
-
-		$(document).on(classAddedEvent, batchItemsSelector, fixBatchItemsOverlayCallback);
-		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 	}
 
 	function applyFilter() {
@@ -217,21 +205,24 @@
 		};
 	}
 
-	function fixBatchItemsOverlayCallback(e) {
-		fixBatchItemsOverlay($(e.currentTarget));
-	}
-
-	function fixBatchItemsOverlay(el) {
-		el.removeClass('fixed');
+	function fixBatchItemsOverlay(e) {
+		$(e.currentTarget).removeClass('fixed');
 	}
 
 	function enableInputs(e) {
 		$(e.currentTarget).prop('disabled', false);
 	}
 
-	$('#loading-screen:visible').on('hide', function() {
-		addEventTriggers();
-		setupUI();
-		setupEvents();
-	});
+	(function() {
+		setEventToTrigger('addClass', classAddedEvent);
+		setEventToTrigger('prop', propModifiedEvent);
+
+		$(document).on(classAddedEvent, '#batch-items.fixed', fixBatchItemsOverlay);
+		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
+
+		$('#loading-screen:visible').on('hide', function() {
+			setupUI();
+			setupEvents();
+		});
+	})();
 })();
