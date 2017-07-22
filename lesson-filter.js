@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          WaniKani Lesson Filter
 // @namespace     https://www.wanikani.com
-// @description   Specify how many lessons of each type you want to do.
+// @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
 // @version       1.0.0
 // @include       *://www.wanikani.com/lesson/session*
