@@ -15,6 +15,9 @@
 (function() {
 	'use strict';
 
+	var localStorageSettingsKey = 'lessonFilter_inputData';
+	var localStorageSettingsVersion = 1;
+
 	var classAddedEvent = 'lessonFilter.classAdded';
 	var propModifiedEvent = 'lessonFilter.propModified';
 	var queueUpdatedEvent = 'lessonFilter.queueUpdated';
@@ -25,6 +28,10 @@
 	var radicalCountKey = 'l/count/rad';
 	var kanjiCountKey = 'l/count/kan';
 	var vocabCountKey = 'l/count/voc';
+
+	var radicalInputSelector = '#lf-radicals';
+	var kanjiInputSelector = '#lf-kanji';
+	var vocabInputSelector = '#lf-vocab';
 
 	var style =
 		'<style>' +
@@ -65,6 +72,28 @@
 	function setupUI() {
 		$('head').append(style);
 		$('#supplement-info').after(html);
+
+		loadSavedInputData();
+	}
+
+	function loadSavedInputData() {
+		var savedDataString = localStorage[localStorageSettingsKey];
+
+		if (!savedDataString) {
+			return;
+		}
+
+		var savedData = JSON.parse(savedDataString);
+
+		if (savedData.version !== localStorageSettingsVersion) {
+			delete localStorage[localStorageSettingsKey];
+			return;
+		}
+
+		var data = savedData.data;
+		$(radicalInputSelector).val(data.radicals);
+		$(kanjiInputSelector).val(data.kanji);
+		$(vocabInputSelector).val(data.vocab);
 	}
 
 	function setupEvents() {
@@ -74,7 +103,8 @@
 	}
 
 	function applyFilter() {
-		var filterCounts = getFilterCounts();
+		var rawFilterValues = getRawFilterValues();
+		var filterCounts = getFilterCounts(rawFilterValues);
 
 		if (filterCounts.nolessons) {
 			alert('You cannot remove all lessons');
@@ -86,12 +116,21 @@
 
 		updateQueue(queue);
 		updateCounts(filterCounts);
+		saveRawFilterValues(rawFilterValues);
 	}
 
-	function getFilterCounts() {
-		var radicalCount = getFilterCount(radicalCountKey, '#lf-radicals');
-		var kanjiCount = getFilterCount(kanjiCountKey, '#lf-kanji');
-		var vocabCount = getFilterCount(vocabCountKey, '#lf-vocab');
+	function getRawFilterValues() {
+		return {
+			'radicals': $(radicalInputSelector).val(),
+			'kanji': $(kanjiInputSelector).val(),
+			'vocab': $(vocabInputSelector).val()
+		};
+	}
+
+	function getFilterCounts(rawFilterValues) {
+		var radicalCount = getFilterCount(radicalCountKey, rawFilterValues.radicals);
+		var kanjiCount = getFilterCount(kanjiCountKey, rawFilterValues.kanji);
+		var vocabCount = getFilterCount(vocabCountKey, rawFilterValues.vocab);
 
 		return {
 			'radicals': radicalCount,
@@ -101,11 +140,8 @@
 		};
 	}
 
-	function getFilterCount(key, selector) {
+	function getFilterCount(key, rawValue) {
 		var currentCount = getWaniKaniData(key);
-
-		var el = $(selector);
-		var rawValue = el.val();
 		var value = parseInt(rawValue);
 
 		if (isNaN(value) || value > currentCount)
@@ -180,6 +216,15 @@
 		setWaniKaniData(radicalCountKey, filterCounts.radicals);
 		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
 		setWaniKaniData(vocabCountKey, filterCounts.vocab);
+	}
+
+	function saveRawFilterValues(rawFilterValues) {
+		var settings = {
+			'version': localStorageSettingsVersion,
+			'data': rawFilterValues
+		};
+
+		localStorage[localStorageSettingsKey] = JSON.stringify(settings);
 	}
 
 	function disableWaniKaniKeyCommands(e) {
