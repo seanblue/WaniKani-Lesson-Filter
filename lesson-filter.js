@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.1.0
+// @version       1.1.1
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
@@ -18,7 +18,6 @@
 	var localStorageSettingsKey = 'lessonFilter_inputData';
 	var localStorageSettingsVersion = 1;
 
-	var classAddedEvent = 'lessonFilter.classAdded';
 	var propModifiedEvent = 'lessonFilter.propModified';
 	var queueUpdatedEvent = 'lessonFilter.queueUpdated';
 
@@ -44,6 +43,7 @@
 			'.lf-list { margin: 0px; padding: 0px; }' +
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
+			'.lf-nofixed { position: inherit !important; bottom: inherit !important; width: inherit !important; }' +
 		'</style>';
 
 	var html =
@@ -70,6 +70,7 @@
 		'</div>';
 
 	function setupUI() {
+		$('#batch-items').addClass('lf-nofixed');
 		$('head').append(style);
 		$('#supplement-info').after(html);
 
@@ -251,19 +252,13 @@
 		};
 	}
 
-	function fixBatchItemsOverlay(e) {
-		$(e.currentTarget).removeClass('fixed');
-	}
-
 	function enableInputs(e) {
 		$(e.currentTarget).prop('disabled', false);
 	}
 
 	(function() {
-		setEventToTrigger('addClass', classAddedEvent);
 		setEventToTrigger('prop', propModifiedEvent);
 
-		$(document).on(classAddedEvent, '#batch-items.fixed', fixBatchItemsOverlay);
 		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 
 		$('#loading-screen:visible').on('hide', function() {
