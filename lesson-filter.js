@@ -45,7 +45,7 @@
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
 			'.lf-nofixed { position: inherit !important; bottom: inherit !important; width: inherit !important; }' +
-			'.lf-batch-size { background-color: #1fa584; }' +
+			'.lf-batch-size { background-color: #005533; }' +
 		'</style>';
 
 	var html =
@@ -53,7 +53,7 @@
 			'<div class="lf-title">Items to Learn</div>' +
 			'<div class="lf-list">' +
 				'<div class="lf-list-item">' +
-					'<span lang="ja">Batch Size</span>' +
+					'<span lang="ja">バッチ</span>' +
 					'<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input lf-batch-size" />' +
 				'</div>' +
 				'<div class="lf-list-item">' +
