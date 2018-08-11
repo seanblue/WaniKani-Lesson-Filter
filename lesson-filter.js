@@ -16,7 +16,7 @@
 	'use strict';
 
 	var localStorageSettingsKey = 'lessonFilter_inputData';
-	var localStorageSettingsVersion = 1;
+	var localStorageSettingsVersion = 2;
 
 	var propModifiedEvent = 'lessonFilter.propModified';
 	var queueUpdatedEvent = 'lessonFilter.queueUpdated';
@@ -28,6 +28,7 @@
 	var kanjiCountKey = 'l/count/kan';
 	var vocabCountKey = 'l/count/voc';
 
+	var batchSizeInputSelector = '#lf-batch-size';
 	var radicalInputSelector = '#lf-radicals';
 	var kanjiInputSelector = '#lf-kanji';
 	var vocabInputSelector = '#lf-vocab';
@@ -44,12 +45,17 @@
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
 			'.lf-nofixed { position: inherit !important; bottom: inherit !important; width: inherit !important; }' +
+			'.lf-batch-size { background-color: #1fa584; }' +
 		'</style>';
 
 	var html =
 		'<div id="lf-main"">' +
 			'<div class="lf-title">Items to Learn</div>' +
 			'<div class="lf-list">' +
+				'<div class="lf-list-item">' +
+					'<span lang="ja">Batch Size</span>' +
+					'<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input lf-batch-size" />' +
+				'</div>' +
 				'<div class="lf-list-item">' +
 					'<span lang="ja">部首</span>' +
 					'<input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input radical" />' +
@@ -92,6 +98,7 @@
 		}
 
 		var data = savedData.data;
+		$(batchSizeInputSelector).val(data.batchSize);
 		$(radicalInputSelector).val(data.radicals);
 		$(kanjiInputSelector).val(data.kanji);
 		$(vocabInputSelector).val(data.vocab);
@@ -112,6 +119,8 @@
 			return;
 		}
 
+		updateBatchSize(filterCounts.batchSize);
+
 		var queue = getQueue();
 		filterQueue(queue, filterCounts);
 
@@ -122,6 +131,7 @@
 
 	function getRawFilterValues() {
 		return {
+			'batchSize': $(batchSizeInputSelector).val(),
 			'radicals': $(radicalInputSelector).val(),
 			'kanji': $(kanjiInputSelector).val(),
 			'vocab': $(vocabInputSelector).val()
@@ -132,12 +142,14 @@
 		var radicalCount = getFilterCount(radicalCountKey, rawFilterValues.radicals);
 		var kanjiCount = getFilterCount(kanjiCountKey, rawFilterValues.kanji);
 		var vocabCount = getFilterCount(vocabCountKey, rawFilterValues.vocab);
+		var checkedBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
 
 		return {
 			'radicals': radicalCount,
 			'kanji': kanjiCount,
 			'vocab': vocabCount,
-			'nolessons': radicalCount === 0 && kanjiCount === 0 && vocabCount === 0
+			'batchSize': checkedBatchSize,
+			'nolessons': (radicalCount === 0 && kanjiCount === 0 && vocabCount === 0) || (checkedBatchSize === 0)
 		};
 	}
 
@@ -145,13 +157,34 @@
 		var currentCount = getWaniKaniData(key);
 		var value = parseInt(rawValue);
 
-		if (isNaN(value) || value > currentCount)
+		if (isNaN(value) || value > currentCount) {
 			return currentCount;
+		}
 
-		if (value < 0)
+		if (value < 0) {
 			return 0;
+		}
 
 		return value;
+	}
+
+	function getCheckedBatchSize(rawValue) {
+		var currentCount = getWaniKaniData(batchSizeKey);
+		var value = parseInt(rawValue);
+
+		if (isNaN(value)) {
+			return currentCount;
+		}
+
+		if (value < 0) {
+			return 0;
+		}
+
+		return value;
+	}
+
+	function updateBatchSize(batchSize) {
+		setWaniKaniData(batchSizeKey, batchSize);
 	}
 
 	function filterQueue(queue, filterCounts) {
