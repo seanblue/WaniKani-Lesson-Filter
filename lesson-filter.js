@@ -45,7 +45,7 @@
 			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
 			'.lf-list-item span, .lf-list-item input { display: block; }' +
 			'.lf-nofixed { position: inherit !important; bottom: inherit !important; width: inherit !important; }' +
-			'.lf-batch-size { background-color: #005533; }' +
+			'.lf-batch-size { background-color: #ff5500; }' +
 		'</style>';
 
 	var html =
