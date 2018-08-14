@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.1.1
+// @version       1.2.0
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
