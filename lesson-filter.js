@@ -3,14 +3,16 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.2.0
+// @version       1.2.1
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
 
+const eventPrefix = 'seanblue.lessonfilter.';
+
 // Catch additional events.
 // http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
-(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(ev); return el.apply(this, arguments); }; }); })(jQuery);
+(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(eventPrefix + ev); return el.apply(this, arguments); }; }); })(jQuery);
 
 (function() {
 	'use strict';
@@ -294,7 +296,7 @@
 
 		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
 
-		$('#loading-screen:visible').on('hide', function() {
+		$('#loading-screen:visible').on(eventPrefix + 'hide', function() {
 			setupUI();
 			setupEvents();
 		});
