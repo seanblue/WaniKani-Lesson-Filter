@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.2.1
+// @version       1.2.2
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
@@ -199,7 +199,7 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		var i;
 		var itemsKept = 0;
 		for (i = 0; i < queue.length; i++) {
-			if (!queue[i][typePropertyName]) {
+			if (queue[i][typePropertyName] === undefined) {
 				continue;
 			}
 
