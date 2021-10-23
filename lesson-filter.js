@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.2.2
+// @version       1.2.3
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
@@ -112,7 +112,7 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
 	}
 
-	function applyFilter() {
+	function applyFilter(e) {
 		var rawFilterValues = getRawFilterValues();
 		var filterCounts = getFilterCounts(rawFilterValues);
 
@@ -129,6 +129,8 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		updateQueue(queue);
 		updateCounts(filterCounts);
 		saveRawFilterValues(rawFilterValues);
+
+        $(e.target).blur();
 	}
 
 	function getRawFilterValues() {
@@ -213,10 +215,12 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		}
 	}
 
-	function applyShuffle() {
+	function applyShuffle(e) {
 		var queue = getQueue();
 		shuffle(queue);
 		updateQueue(queue);
+
+        $(e.target).blur();
 	}
 
 	function shuffle(array) {
