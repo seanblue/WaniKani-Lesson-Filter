@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.2.4
+// @version       1.3.0
 // @include       *://www.wanikani.com/lesson/session*
 // @grant         none
 // ==/UserScript==
@@ -12,9 +12,9 @@ const eventPrefix = 'seanblue.lessonfilter.';
 
 // Catch additional events.
 // http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
-(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(eventPrefix + ev); return el.apply(this, arguments); }; }); })(jQuery);
+(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(eventPrefix + ev); return el.apply(this, arguments); }; }); })(window.jQuery);
 
-(function() {
+(function($) {
 	'use strict';
 
 	var localStorageSettingsKey = 'lessonFilter_inputData';
@@ -113,7 +113,14 @@ const eventPrefix = 'seanblue.lessonfilter.';
 	}
 
 	function applyFilter(e) {
-		var rawFilterValues = getRawFilterValues();
+		var rawFilterValues = getRawFilterValuesFromUI();
+		filterLessonsInternal(rawFilterValues);
+		saveRawFilterValues(rawFilterValues);
+
+		$(e.target).blur();
+	}
+
+	function filterLessonsInternal(rawFilterValues) {
 		var filterCounts = getFilterCounts(rawFilterValues);
 
 		if (filterCounts.nolessons) {
@@ -128,12 +135,9 @@ const eventPrefix = 'seanblue.lessonfilter.';
 
 		updateQueue(queue);
 		updateCounts(filterCounts);
-		saveRawFilterValues(rawFilterValues);
-
-		$(e.target).blur();
 	}
 
-	function getRawFilterValues() {
+	function getRawFilterValuesFromUI() {
 		return {
 			'batchSize': $(batchSizeInputSelector).val(),
 			'radicals': $(radicalInputSelector).val(),
@@ -216,11 +220,15 @@ const eventPrefix = 'seanblue.lessonfilter.';
 	}
 
 	function applyShuffle(e) {
+		shuffleLessonsInternal();
+
+		$(e.target).blur();
+	}
+
+	function shuffleLessonsInternal() {
 		var queue = getQueue();
 		shuffle(queue);
 		updateQueue(queue);
-
-		$(e.target).blur();
 	}
 
 	function shuffle(array) {
@@ -299,6 +307,21 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		$(e.currentTarget).prop('disabled', false);
 	}
 
+	window.shuffleLessons = function() {
+		shuffleLessonsInternal();
+	};
+
+	window.filterLessons = function(batchSize, radicalCount, kanjiCount, vocabCount) {
+		var rawFilterValues = {
+			'batchSize': batchSize,
+			'radicals': radicalCount,
+			'kanji': kanjiCount,
+			'vocab': vocabCount
+		};
+
+		filterLessonsInternal(rawFilterValues);
+	};
+
 	(function() {
 		setEventToTrigger('prop', propModifiedEvent);
 
@@ -309,4 +332,4 @@ const eventPrefix = 'seanblue.lessonfilter.';
 			setupEvents();
 		});
 	})();
-})();
+})(window.jQuery);
