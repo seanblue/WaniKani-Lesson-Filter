@@ -26,6 +26,7 @@ const eventPrefix = 'seanblue.lessonfilter.';
 	var activeQueueKey = 'l/activeQueue';
 	var inactiveQueueKey = 'l/lessonQueue';
 	var batchSizeKey = 'l/batchSize';
+	var unreadIndicesKey = 'l/unreadIndices';
 	var radicalCountKey = 'l/count/rad';
 	var kanjiCountKey = 'l/count/kan';
 	var vocabCountKey = 'l/count/voc';
@@ -254,6 +255,7 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		// Must update the inactive queue after the active queue to get the UI to update properly.
 		setWaniKaniData(activeQueueKey, activeQueue);
 		setWaniKaniData(inactiveQueueKey, inactiveQueue);
+		resetUnreadIndices(batchSize);
 
 		// Script compatibility mode: ON (as of v4.0.0)
 		$('#batch-items li:first').click();
@@ -262,6 +264,15 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		$('[data-testid="batchList"] li:first button').click();
 
 		$(document).trigger(queueUpdatedEvent);
+	}
+
+	function resetUnreadIndices(batchSize) {
+		let unreadIndices = [];
+		for (let i = 0; i < batchSize; i++) {
+			unreadIndices.push(i);
+		}
+
+		setWaniKaniData(unreadIndicesKey, unreadIndices);
 	}
 
 	function updateCounts(filterCounts) {
