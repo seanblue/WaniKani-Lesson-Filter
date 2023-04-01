@@ -3,33 +3,39 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.3.1
-// @include       *://www.wanikani.com/lesson/session*
+// @version       1.9.0
+// @match        https://www.wanikani.com/subjects*
+// @match        https://preview.wanikani.com/subjects*
 // @grant         none
 // ==/UserScript==
 
-const eventPrefix = 'seanblue.lessonfilter.';
-
-// Catch additional events.
-// http://viralpatel.net/blogs/jquery-trigger-custom-event-show-hide-element/
-(function($) {$.each(['hide'], function(i, ev) { var el = $.fn[ev]; $.fn[ev] = function() { this.trigger(eventPrefix + ev); return el.apply(this, arguments); }; }); })(window.jQuery);
-
-(function($) {
+(async function(Turbo, wkof) {
 	'use strict';
+
+	var wkofMinimumVersion = '1.1.0';
+
+	if (!wkof) {
+		var response = confirm('WaniKani Lesson Filter requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
+
+		if (response) {
+			window.location.href = 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549';
+		}
+
+		return;
+	}
+
+	if (!wkof.version || wkof.version.compare_to(wkofMinimumVersion) === 'older') {
+		alert(`WaniKani Lesson Filter requires at least version ${wkofMinimumVersion} of WaniKani Open Framework.`);
+		return;
+	}
+
 
 	const localStorageSettingsKey = 'lessonFilter_inputData';
 	const localStorageSettingsVersion = 2;
 
-	const propModifiedEvent = 'lessonFilter.propModified';
-	const queueUpdatedEvent = 'lessonFilter.queueUpdated';
-
-	const activeQueueKey = 'l/activeQueue';
-	const inactiveQueueKey = 'l/lessonQueue';
-	const batchSizeKey = 'l/batchSize';
-	const unreadIndicesKey = 'l/unreadIndices';
-	const radicalCountKey = 'l/count/rad';
-	const kanjiCountKey = 'l/count/kan';
-	const vocabCountKey = 'l/count/voc';
+	const radicalSubjectType = 'radical';
+	const kanjiSubjectType = 'kanji';
+	const vocabSubjectType = 'vocabulary';
 
 	const batchSizeInputSelector = '#lf-batch-size';
 	const radicalInputSelector = '#lf-radicals';
@@ -78,12 +84,86 @@ const eventPrefix = 'seanblue.lessonfilter.';
 			'</div>' +
 		'</div>';
 
-	function setupUI() {
-		$('#batch-items').addClass('lf-nofixed');
-		$('head').append(style);
-		$('#supplement-info').after(html);
+	let queueInitializedPromise;
 
-		loadSavedInputData();
+	let initialLessonQueue;
+	let initialBatchSize;
+
+	let currentLessonQueue;
+	let currentBatchSize;
+
+	async function initialize() {
+		queueInitializedPromise = initializeLessonQueue();
+		await queueInitializedPromise;
+	}
+
+	async function initializeLessonQueue() {
+		wkof.include('Apiv2');
+		await wkof.ready('Apiv2');
+
+		let [ unsortedLessonQueue, userPreferences ] = await Promise.all([getUnsortedLessonQueue(), getUserPreferences()]);
+
+		initialBatchSize = userPreferences.batchSize;
+		initialLessonQueue = sortInitialLessonQueue(unsortedLessonQueue, userPreferences.lessonOrder);
+
+		currentLessonQueue = [...initialLessonQueue];
+		currentBatchSize = initialBatchSize;
+
+		console.log(currentLessonQueue);
+
+		return Promise.resolve('done');
+	}
+
+	async function getUnsortedLessonQueue() {
+		let summary = await wkof.Apiv2.fetch_endpoint('summary');
+		let lessonIds = summary.data.lessons.flatMap(l => l.subject_ids);
+
+		let lessonData = await wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
+
+		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position }));
+	}
+
+	async function getUserPreferences() {
+		let response = await wkof.Apiv2.fetch_endpoint('user');
+		return {
+			batchSize: response.data.preferences.lessons_batch_size,
+			lessonOrder: response.data.preferences.lessons_presentation_order
+		};
+	}
+
+	function sortInitialLessonQueue(queue, lessonOrder) {
+		let typeOrder = [radicalSubjectType, kanjiSubjectType, vocabSubjectType];
+
+		if (lessonOrder === 'ascending_level_then_subject') {
+			return queue.sort((a, b) => a.level - b.level || typeOrder.indexOf(a.subjectType) - typeOrder.indexOf(b.subjectType) || a.lessonPosition - b.lessonPosition);
+		}
+
+		shuffle(queue);
+
+		if (lessonOrder === 'ascending_level_then_shuffled') {
+			queue.sort((a, b) => a.level - b.level);
+		}
+
+		return queue;
+	}
+
+	async function setupUI() {
+		if (!onLessonPage()) {
+			return;
+		}
+
+		wkof.include('Jquery');
+
+		await wkof.ready('Jquery');
+
+		console.log($);
+
+
+		//$('#batch-items').addClass('lf-nofixed');
+		$('head').append(style);
+		$('.subject-queue').before(html);
+
+		//loadSavedInputData();
 	}
 
 	function loadSavedInputData() {
@@ -121,21 +201,25 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		$(e.target).blur();
 	}
 
-	function filterLessonsInternal(rawFilterValues) {
-		let filterCounts = getFilterCounts(rawFilterValues);
+	async function filterLessonsInternal(rawFilterValues) {
+		await queueInitializedPromise;
 
-		if (filterCounts.nolessons) {
+		let newFilteredQueue = getFilteredQueue(rawFilterValues);
+
+		if (newFilteredQueue.length === 0) {
 			alert('You cannot remove all lessons');
 			return;
 		}
 
-		updateBatchSize(filterCounts.batchSize);
+		currentLessonQueue = newFilteredQueue;
 
-		let queue = getQueue();
-		filterQueue(queue, filterCounts);
+		let newBatchedSize = getCheckedBatchSize(rawFilterValues.batchSize);
+		currentBatchSize = newBatchedSize;
 
-		updateQueue(queue);
-		updateCounts(filterCounts);
+		console.log(newFilteredQueue);
+		console.log(newBatchedSize);
+
+		updatePageForNewQueue();
 	}
 
 	function getRawFilterValuesFromUI() {
@@ -147,42 +231,45 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		};
 	}
 
-	function getFilterCounts(rawFilterValues) {
-		let radicalCount = getFilterCount(radicalCountKey, rawFilterValues.radicals);
-		let kanjiCount = getFilterCount(kanjiCountKey, rawFilterValues.kanji);
-		let vocabCount = getFilterCount(vocabCountKey, rawFilterValues.vocab);
-		let checkedBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
+	function getFilteredQueue(rawFilterValues) {
+		let idToIndex = { };
 
-		return {
-			'radicals': radicalCount,
-			'kanji': kanjiCount,
-			'vocab': vocabCount,
-			'batchSize': checkedBatchSize,
-			'nolessons': (radicalCount === 0 && kanjiCount === 0 && vocabCount === 0) || (checkedBatchSize === 0)
-		};
+		for (let i = 0; i < currentLessonQueue.length; i++) {
+			idToIndex[currentLessonQueue[i].id] = i;
+		}
+
+		let filteredRadicalQueue = getFilteredQueueForType(radicalSubjectType, rawFilterValues.radicals);
+		let filteredKanjiQueue = getFilteredQueueForType(kanjiSubjectType, rawFilterValues.kanji);
+		let filteredVocabQueue = getFilteredQueueForType(vocabSubjectType, rawFilterValues.vocab);
+
+		return filteredRadicalQueue.concat(filteredKanjiQueue).concat(filteredVocabQueue).sort((a, b) => idToIndex[a.id] - idToIndex[b.id]);
 	}
 
-	function getFilterCount(key, rawValue) {
-		let currentCount = getWaniKaniData(key);
-		let value = parseInt(rawValue);
+	function getFilteredQueueForType(subjectType, rawFilterValue) {
+		let filterValue = parseInt(rawFilterValue);
 
-		if (isNaN(value) || value > currentCount) {
-			return currentCount;
+		if (filterValue <= 0) {
+			return [];
 		}
 
-		if (value < 0) {
-			return 0;
+		let queueForType = getQueueForType(subjectType);
+
+		if (isNaN(filterValue)) {
+			return queueForType;
 		}
 
-		return value;
+		return queueForType.slice(0, filterValue);
+	}
+
+	function getQueueForType(subjectType) {
+		return currentLessonQueue.filter(item => item.subjectType === subjectType);
 	}
 
 	function getCheckedBatchSize(rawValue) {
-		let currentCount = getWaniKaniData(batchSizeKey);
 		let value = parseInt(rawValue);
 
 		if (isNaN(value)) {
-			return currentCount;
+			return currentBatchSize;
 		}
 
 		if (value < 0) {
@@ -190,34 +277,6 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		}
 
 		return value;
-	}
-
-	function updateBatchSize(batchSize) {
-		setWaniKaniData(batchSizeKey, batchSize);
-	}
-
-	function filterQueue(queue, filterCounts) {
-		filterQueueForType(queue, 'rad', filterCounts.radicals);
-		filterQueueForType(queue, 'kan', filterCounts.kanji);
-		filterQueueForType(queue, 'voc', filterCounts.vocab);
-	}
-
-	function filterQueueForType(queue, typePropertyName, itemsToKeep) {
-		let i;
-		let itemsKept = 0;
-		for (i = 0; i < queue.length; i++) {
-			if (queue[i][typePropertyName] === undefined) {
-				continue;
-			}
-
-			if (itemsKept < itemsToKeep) {
-				itemsKept++;
-				continue;
-			}
-
-			queue.splice(i, 1);
-			i--;
-		}
 	}
 
 	function applyShuffle(e) {
@@ -226,10 +285,11 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		$(e.target).blur();
 	}
 
-	function shuffleLessonsInternal() {
-		let queue = getQueue();
-		shuffle(queue);
-		updateQueue(queue);
+	async function shuffleLessonsInternal() {
+		await queueInitializedPromise;
+
+		shuffle(currentLessonQueue);
+		updatePageForNewQueue();
 	}
 
 	function shuffle(array) {
@@ -243,42 +303,17 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		}
 	}
 
-	function getQueue() {
-		return getWaniKaniData(activeQueueKey).concat(getWaniKaniData(inactiveQueueKey));
+	async function resetInternal() {
+		await queueInitializedPromise;
+
+		currentLessonQueue = initialLessonQueue;
+		currentBatchSize = initialBatchSize;
+		updatePageForNewQueue();
 	}
 
-	function updateQueue(queue) {
-		let batchSize = getWaniKaniData(batchSizeKey);
-		let activeQueue = queue.slice(0, batchSize);
-		let inactiveQueue = queue.slice(batchSize);
-
-		// Must update the inactive queue after the active queue to get the UI to update properly.
-		setWaniKaniData(activeQueueKey, activeQueue);
-		setWaniKaniData(inactiveQueueKey, inactiveQueue);
-		resetUnreadIndices(batchSize);
-
-		// Script compatibility mode: ON (as of v4.0.0)
-		$('#batch-items li:first').click();
-
-		// Script compatibility mode: OFF
-		$('[data-testid="batchList"] li:first button').click();
-
-		$(document).trigger(queueUpdatedEvent);
-	}
-
-	function resetUnreadIndices(batchSize) {
-		let unreadIndices = [];
-		for (let i = 0; i < batchSize; i++) {
-			unreadIndices.push(i);
-		}
-
-		setWaniKaniData(unreadIndicesKey, unreadIndices);
-	}
-
-	function updateCounts(filterCounts) {
-		setWaniKaniData(radicalCountKey, filterCounts.radicals);
-		setWaniKaniData(kanjiCountKey, filterCounts.kanji);
-		setWaniKaniData(vocabCountKey, filterCounts.vocab);
+	function updatePageForNewQueue() {
+		let lessonBatchQueryParam = currentLessonQueue.slice(0, currentBatchSize).map(q => q.id).join('-');
+		Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
 	}
 
 	function saveRawFilterValues(rawFilterValues) {
@@ -294,53 +329,44 @@ const eventPrefix = 'seanblue.lessonfilter.';
 		e.stopPropagation();
 	}
 
-	function getWaniKaniData(key) {
-		return $.jStorage.get(key);
-	}
-
-	function setWaniKaniData(key, value) {
-		return $.jStorage.set(key, value);
-	}
-
-	// https://stackoverflow.com/a/14084869
-	function setEventToTrigger(jQueryMethodName, eventName) {
-		let originalMethod = $.fn[jQueryMethodName];
-
-		$.fn[jQueryMethodName] = function() {
-			let result = originalMethod.apply(this, arguments);
-			$(this).trigger(eventName);
-
-			return result;
-		};
-	}
-
 	function enableInputs(e) {
 		$(e.currentTarget).prop('disabled', false);
 	}
 
-	window.shuffleLessons = function() {
-		shuffleLessonsInternal();
-	};
+	window.lessonFilter = {
+		shuffle: () => {
+			shuffleLessonsInternal()
+		},
+		filter: (radicalCount, kanjiCount, vocabCount, batchSize) => {
+			let rawFilterValues = {
+				'radicals': radicalCount,
+				'kanji': kanjiCount,
+				'vocab': vocabCount,
+				'batchSize': batchSize
+			};
 
-	window.filterLessons = function(batchSize, radicalCount, kanjiCount, vocabCount) {
-		let rawFilterValues = {
-			'batchSize': batchSize,
-			'radicals': radicalCount,
-			'kanji': kanjiCount,
-			'vocab': vocabCount
-		};
+			filterLessonsInternal(rawFilterValues);
+		},
+		reset: () => {
+			resetInternal();
+		}
+	}
 
-		filterLessonsInternal(rawFilterValues);
-	};
+	function onLessonPage() {
+		let path = window.location.pathname;
 
-	(function() {
-		setEventToTrigger('prop', propModifiedEvent);
+		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(path));
+	}
 
-		$(document).on(propModifiedEvent, '#lf-main input:disabled', enableInputs);
+	/*
+	window.addEventListener("turbo:before-render", function (e) {
+		if (!onLessonPage()) {
+			return;
+		}
 
-		$('#loading-screen:visible').on(eventPrefix + 'hide', function() {
-			setupUI();
-			setupEvents();
-		});
-	})();
-})(window.jQuery);
+		initialize();
+	});
+	*/
+
+	await initialize();
+})(window.Turbo, window.wkof);
