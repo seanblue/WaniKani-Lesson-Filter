@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.9.0
+// @version       1.9.1
 // @match        https://www.wanikani.com/subjects*
 // @match        https://preview.wanikani.com/subjects*
 // @grant         none
@@ -219,7 +219,7 @@
 		console.log(newFilteredQueue);
 		console.log(newBatchedSize);
 
-		updatePageForNewQueue();
+		visitUrlForCurrentBatch();
 	}
 
 	function getRawFilterValuesFromUI() {
@@ -289,7 +289,7 @@
 		await queueInitializedPromise;
 
 		shuffle(currentLessonQueue);
-		updatePageForNewQueue();
+		visitUrlForCurrentBatch();
 	}
 
 	function shuffle(array) {
@@ -308,12 +308,20 @@
 
 		currentLessonQueue = initialLessonQueue;
 		currentBatchSize = initialBatchSize;
-		updatePageForNewQueue();
+		visitUrlForCurrentBatch();
 	}
 
-	function updatePageForNewQueue() {
-		let lessonBatchQueryParam = currentLessonQueue.slice(0, currentBatchSize).map(q => q.id).join('-');
+	function visitUrlForCurrentBatch() {
+		if (currentLessonQueue.length === 0) {
+			Turbo.visit(`/dashboard`);
+		}
+
+		let lessonBatchQueryParam = getCurrentLessonBatchIds().join('-');
 		Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
+	}
+
+	function getCurrentLessonBatchIds() {
+		return currentLessonQueue.slice(0, currentBatchSize).map(item => item.id);
 	}
 
 	function saveRawFilterValues(rawFilterValues) {
@@ -333,6 +341,47 @@
 		$(e.currentTarget).prop('disabled', false);
 	}
 
+	function isNewBatchUrl(url) {
+		return new URL(url).pathname === '/subjects/lesson';
+	}
+
+	function updateLessonBatchOnUrlChange(e) {
+		let lessonBatchQueryParam = new URLSearchParams(new URL(e.detail.url).search).get('queue');
+		if (!lessonBatchQueryParam) {
+			return;
+		}
+
+		let lessonBatchIdSetFromUrl = new Set(lessonBatchQueryParam.split('-').map(v => parseInt(v)));
+		let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds());
+
+		if (setsAreEqual(lessonBatchIdSetFromUrl, currentLessonBatchIdSet)) {
+			return;
+		}
+
+		e.preventDefault();
+
+		initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+		currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+		visitUrlForCurrentBatch();
+	}
+
+	function setsAreEqual(set1, set2) {
+		return set1.size === set2.size && [...set1].every(v => set2.has(v));
+	}
+
+	window.addEventListener("turbo:before-visit", function(e) {
+		if (isNewBatchUrl(e.detail.url)) {
+			e.preventDefault();
+
+			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds());
+
+			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+			currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+
+			visitUrlForCurrentBatch();
+		}
+	});
+
 	window.lessonFilter = {
 		shuffle: () => {
 			shuffleLessonsInternal()
@@ -351,22 +400,6 @@
 			resetInternal();
 		}
 	}
-
-	function onLessonPage() {
-		let path = window.location.pathname;
-
-		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(path));
-	}
-
-	/*
-	window.addEventListener("turbo:before-render", function (e) {
-		if (!onLessonPage()) {
-			return;
-		}
-
-		initialize();
-	});
-	*/
 
 	await initialize();
 })(window.Turbo, window.wkof);
