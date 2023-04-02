@@ -345,26 +345,6 @@
 		return new URL(url).pathname === '/subjects/lesson';
 	}
 
-	function updateLessonBatchOnUrlChange(e) {
-		let lessonBatchQueryParam = new URLSearchParams(new URL(e.detail.url).search).get('queue');
-		if (!lessonBatchQueryParam) {
-			return;
-		}
-
-		let lessonBatchIdSetFromUrl = new Set(lessonBatchQueryParam.split('-').map(v => parseInt(v)));
-		let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds());
-
-		if (setsAreEqual(lessonBatchIdSetFromUrl, currentLessonBatchIdSet)) {
-			return;
-		}
-
-		e.preventDefault();
-
-		initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-		currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-		visitUrlForCurrentBatch();
-	}
-
 	function setsAreEqual(set1, set2) {
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
