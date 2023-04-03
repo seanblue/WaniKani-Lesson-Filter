@@ -49,22 +49,26 @@
 			.lf-title { font-size: 1.6em; font-weight: bold; padding-bottom: 5px; }
 
 			.lf-list { margin: 0px; padding: 0px; }
-			.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 8px; }
+			.lf-list-item { display: inline-block; list-style: none; text-align: center; padding: 8px; }
 			.lf-list-item input { display: block; width: 45px; color: #fff; border-width: 2px; border-style: inset; }
-			.lf-list-item span { display: block; }
+			.lf-list-item span { display: block; padding-bottom: 3px; }
+			#lf-batch-size { background-color: #ff5500; }
 			#lf-radical { background-color: #0af; }
 			#lf-kanji { background-color: #f0a; }
 			#lf-vocab { background-color: #a0f; }
-			#lf-batch-size { background-color: #ff5500; }
 
 			.lf-filter-section { padding-top: 10px; }
-			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 3px; border-width: 2px; border-style: outset; border-radius: 3px; }
+			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 3px; border-width: 2px; border-style: outset; border-radius: 6px; }
 		</style>`;
 
 	const html =
 		`<div id="lf-main">
 			<div class="lf-title">Items to Learn</div>
 			<div class="lf-list">
+				<div class="lf-list-item">
+					<span lang="ja">バッチ</span>
+					<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
+				</div>
 				<div class="lf-list-item">
 					<span lang="ja">部首</span>
 					<input id="lf-radical" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
@@ -76,10 +80,6 @@
 				<div class="lf-list-item">
 					<span lang="ja">単語</span>
 					<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
-				</div>
-				<div class="lf-list-item">
-					<span lang="ja">バッチ</span>
-					<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
 				</div>
 			</div>
 			<div class="lf-filter-section">
@@ -370,7 +370,7 @@
 		}
 	});
 
-	window.lessonFilter = {
+	window.lessonFilter = Object.freeze({
 		shuffle: () => {
 			shuffleLessonsInternal()
 		},
@@ -387,7 +387,7 @@
 		reset: () => {
 			resetInternal();
 		}
-	}
+	});
 
 	setupUI();
 	await initialize();
