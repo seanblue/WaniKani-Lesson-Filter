@@ -38,51 +38,55 @@
 	const vocabSubjectType = 'vocabulary';
 
 	const batchSizeInputSelector = '#lf-batch-size';
-	const radicalInputSelector = '#lf-radicals';
+	const radicalInputSelector = '#lf-radical';
 	const kanjiInputSelector = '#lf-kanji';
 	const vocabInputSelector = '#lf-vocab';
 
 	const style =
-		'<style>' +
-			'#lf-main { padding: 10px 0px; border-radius: 6px; margin: 5px; text-align: center; font-size: 0.8em; background-color: #444; color: #fff; }' +
-			'#lf-main input:focus { outline: none; }' +
-			'.lf-title { font-size: 1.5em; font-weight: bold; }' +
-			'.lf-filter-section { padding-top: 10px; }' +
-			'.lf-input { width: 40px; color: #fff; }' +
-			'.lf-button { border-radius: 6px; margin: 0px 10px; }' +
-			'.lf-list { margin: 0px; padding: 0px; }' +
-			'.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 5px 10px; }' +
-			'.lf-list-item span, .lf-list-item input { display: block; }' +
-			'.lf-nofixed { position: inherit !important; bottom: inherit !important; width: inherit !important; }' +
-			'.lf-batch-size { background-color: #ff5500; }' +
-		'</style>';
+		`<style>
+			#lf-main { width: 100%; margin: 10px auto; padding: 10px 20px; border-radius: 6px; text-align: center; background-color: #444; color: #fff; }
+
+			.lf-title { font-size: 1.6em; font-weight: bold; padding-bottom: 5px; }
+
+			.lf-list { margin: 0px; padding: 0px; }
+			.lf-list-item { display: inline-block; list-style: none; border-radius: 6px; text-align: center; padding: 8px; }
+			.lf-list-item input { display: block; width: 45px; color: #fff; border-width: 2px; border-style: inset; }
+			.lf-list-item span { display: block; }
+			#lf-radical { background-color: #0af; }
+			#lf-kanji { background-color: #f0a; }
+			#lf-vocab { background-color: #a0f; }
+			#lf-batch-size { background-color: #ff5500; }
+
+			.lf-filter-section { padding-top: 10px; }
+			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 3px; border-width: 2px; border-style: outset; border-radius: 3px; }
+		</style>`;
 
 	const html =
-		'<div id="lf-main"">' +
-			'<div class="lf-title">Items to Learn</div>' +
-			'<div class="lf-list">' +
-				'<div class="lf-list-item">' +
-					'<span lang="ja">バッチ</span>' +
-					'<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input lf-batch-size" />' +
-				'</div>' +
-				'<div class="lf-list-item">' +
-					'<span lang="ja">部首</span>' +
-					'<input id="lf-radicals" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input radical" />' +
-				'</div>' +
-				'<div class="lf-list-item">' +
-					'<span lang="ja">漢字</span>' +
-					'<input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input kanji" />' +
-				'</div>' +
-				'<div class="lf-list-item">' +
-					'<span lang="ja">単語</span>' +
-					'<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" class="lf-input vocabulary" />' +
-				'</div>' +
-			'</div>' +
-			'<div class="lf-filter-section">' +
-				'<input type="button" value="Filter" id="lf-apply-filter" class="lf-button"></input>' +
-				'<input type="button" value="Shuffle" id="lf-apply-shuffle" class="lf-button"></input>' +
-			'</div>' +
-		'</div>';
+		`<div id="lf-main">
+			<div class="lf-title">Items to Learn</div>
+			<div class="lf-list">
+				<div class="lf-list-item">
+					<span lang="ja">部首</span>
+					<input id="lf-radical" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
+				</div>
+				<div class="lf-list-item">
+					<span lang="ja">漢字</span>
+					<input id="lf-kanji" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
+				</div>
+				<div class="lf-list-item">
+					<span lang="ja">単語</span>
+					<input id="lf-vocab" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
+				</div>
+				<div class="lf-list-item">
+					<span lang="ja">バッチ</span>
+					<input id="lf-batch-size" type="text" autocomplete="off" data-lpignore="true" maxlength="4" />
+				</div>
+			</div>
+			<div class="lf-filter-section">
+				<input type="button" value="Filter" id="lf-apply-filter"></input>
+				<input type="button" value="Shuffle" id="lf-apply-shuffle"></input>
+			</div>
+		</div>`;
 
 	let queueInitializedPromise;
 
@@ -148,7 +152,7 @@
 	}
 
 	async function setupUI() {
-		if (!onLessonPage()) {
+		if (!onLessonPage(window.location.pathname)) {
 			return;
 		}
 
@@ -159,11 +163,15 @@
 		console.log($);
 
 
-		//$('#batch-items').addClass('lf-nofixed');
 		$('head').append(style);
-		$('.subject-queue').before(html);
+		$('.subject-queue__items').before(html);
 
-		//loadSavedInputData();
+		loadSavedInputData();
+		setupEvents();
+	}
+
+	function onLessonPage(path) {
+		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(path));
 	}
 
 	function loadSavedInputData() {
@@ -349,7 +357,7 @@
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
 
-	window.addEventListener("turbo:before-visit", function(e) {
+	window.addEventListener('turbo:before-visit', function(e) {
 		if (isNewBatchUrl(e.detail.url)) {
 			e.preventDefault();
 
@@ -381,5 +389,6 @@
 		}
 	}
 
+	setupUI();
 	await initialize();
 })(window.Turbo, window.wkof);
