@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.9.1
+// @version       1.9.2
 // @match        https://www.wanikani.com/subjects*
 // @match        https://preview.wanikani.com/subjects*
 // @grant         none
@@ -151,30 +151,22 @@
 		return queue;
 	}
 
-	async function setupUI() {
-		if (!onLessonPage(window.location.pathname)) {
+	function setupStyles(head) {
+		head.insertAdjacentHTML('beforeend', style);
+	}
+
+	function setupUI(body) {
+		if (!onLessonPage(window.location)) {
 			return;
 		}
 
-		global.wkof.include('Jquery');
+		body.querySelector('.subject-queue__items').insertAdjacentHTML('beforeend', html);
 
-		await global.wkof.ready('Jquery');
-
-		console.log($);
-
-
-		$('head').append(style);
-		$('.subject-queue__items').before(html);
-
-		loadSavedInputData();
-		setupEvents();
+		loadSavedInputData(body);
+		setupEvents(body);
 	}
 
-	function onLessonPage(path) {
-		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(path));
-	}
-
-	function loadSavedInputData() {
+	function loadSavedInputData(body) {
 		let savedDataString = localStorage[localStorageSettingsKey];
 
 		if (!savedDataString) {
@@ -189,24 +181,21 @@
 		}
 
 		let data = savedData.data;
-		$(batchSizeInputSelector).val(data.batchSize);
-		$(radicalInputSelector).val(data.radicals);
-		$(kanjiInputSelector).val(data.kanji);
-		$(vocabInputSelector).val(data.vocab);
+		body.querySelector(batchSizeInputSelector).value = data.batchSize;
+		body.querySelector(radicalInputSelector).value = data.radicals;
+		body.querySelector(kanjiInputSelector).value = data.kanji;
+		body.querySelector(vocabInputSelector).value = data.vocab;
 	}
 
-	function setupEvents() {
-		$('#lf-apply-filter').on('click', applyFilter);
-		$('#lf-apply-shuffle').on('click', applyShuffle);
-		$('#lf-main').on('keydown, keypress, keyup', '.lf-input', disableWaniKaniKeyCommands);
+	function setupEvents(body) {
+		body.querySelector('#lf-apply-filter').addEventListener('click', applyFilter);
+		body.querySelector('#lf-apply-shuffle').addEventListener('click', applyShuffle);
 	}
 
 	function applyFilter(e) {
-		let rawFilterValues = getRawFilterValuesFromUI();
+		let rawFilterValues = getRawFilterValuesFromUI(document);
 		filterLessonsInternal(rawFilterValues);
 		saveRawFilterValues(rawFilterValues);
-
-		$(e.target).blur();
 	}
 
 	async function filterLessonsInternal(rawFilterValues) {
@@ -230,12 +219,12 @@
 		visitUrlForCurrentBatch();
 	}
 
-	function getRawFilterValuesFromUI() {
+	function getRawFilterValuesFromUI(body) {
 		return {
-			'batchSize': $(batchSizeInputSelector).val(),
-			'radicals': $(radicalInputSelector).val(),
-			'kanji': $(kanjiInputSelector).val(),
-			'vocab': $(vocabInputSelector).val()
+			'batchSize': body.querySelector(batchSizeInputSelector).value,
+			'radicals': body.querySelector(radicalInputSelector).value,
+			'kanji': body.querySelector(kanjiInputSelector).value,
+			'vocab': body.querySelector(vocabInputSelector).value
 		};
 	}
 
@@ -289,8 +278,6 @@
 
 	function applyShuffle(e) {
 		shuffleLessonsInternal();
-
-		$(e.target).blur();
 	}
 
 	async function shuffleLessonsInternal() {
@@ -349,6 +336,10 @@
 		return new URL(url).pathname === '/subjects/lesson';
 	}
 
+	function onLessonPage(location) {
+		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname));
+	}
+
 	function setsAreEqual(set1, set2) {
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
@@ -364,6 +355,10 @@
 
 			visitUrlForCurrentBatch();
 		}
+	});
+
+	window.addEventListener('turbo:before-render', function(e) {
+		setupUI(e.detail.newBody);
 	});
 
 	window.lessonFilter = Object.freeze({
@@ -385,6 +380,7 @@
 		}
 	});
 
-	setupUI();
+	setupStyles(document.head);
+	setupUI(document.body);
 	await initialize();
 })(window);
