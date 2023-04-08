@@ -9,12 +9,12 @@
 // @grant         none
 // ==/UserScript==
 
-(async function(Turbo, wkof) {
+(async function(global) {
 	'use strict';
 
 	var wkofMinimumVersion = '1.1.0';
 
-	if (!wkof) {
+	if (!global.wkof) {
 		var response = confirm('WaniKani Lesson Filter requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
 
 		if (response) {
@@ -24,7 +24,7 @@
 		return;
 	}
 
-	if (!wkof.version || wkof.version.compare_to(wkofMinimumVersion) === 'older') {
+	if (!global.wkof.version || global.wkof.version.compare_to(wkofMinimumVersion) === 'older') {
 		alert(`WaniKani Lesson Filter requires at least version ${wkofMinimumVersion} of WaniKani Open Framework.`);
 		return;
 	}
@@ -102,8 +102,8 @@
 	}
 
 	async function initializeLessonQueue() {
-		wkof.include('Apiv2');
-		await wkof.ready('Apiv2');
+		global.wkof.include('Apiv2');
+		await global.wkof.ready('Apiv2');
 
 		let [ unsortedLessonQueue, userPreferences ] = await Promise.all([getUnsortedLessonQueue(), getUserPreferences()]);
 
@@ -119,16 +119,16 @@
 	}
 
 	async function getUnsortedLessonQueue() {
-		let summary = await wkof.Apiv2.fetch_endpoint('summary');
+		let summary = await global.wkof.Apiv2.fetch_endpoint('summary');
 		let lessonIds = summary.data.lessons.flatMap(l => l.subject_ids);
 
-		let lessonData = await wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
+		let lessonData = await global.wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
 
 		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position }));
 	}
 
 	async function getUserPreferences() {
-		let response = await wkof.Apiv2.fetch_endpoint('user');
+		let response = await global.wkof.Apiv2.fetch_endpoint('user');
 		return {
 			batchSize: response.data.preferences.lessons_batch_size,
 			lessonOrder: response.data.preferences.lessons_presentation_order
@@ -156,9 +156,9 @@
 			return;
 		}
 
-		wkof.include('Jquery');
+		global.wkof.include('Jquery');
 
-		await wkof.ready('Jquery');
+		await global.wkof.ready('Jquery');
 
 		console.log($);
 
@@ -321,11 +321,11 @@
 
 	function visitUrlForCurrentBatch() {
 		if (currentLessonQueue.length === 0) {
-			Turbo.visit(`/dashboard`);
+			global.Turbo.visit(`/dashboard`);
 		}
 
 		let lessonBatchQueryParam = getCurrentLessonBatchIds().join('-');
-		Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
+		global.Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
 	}
 
 	function getCurrentLessonBatchIds() {
@@ -343,10 +343,6 @@
 
 	function disableWaniKaniKeyCommands(e) {
 		e.stopPropagation();
-	}
-
-	function enableInputs(e) {
-		$(e.currentTarget).prop('disabled', false);
 	}
 
 	function isNewBatchUrl(url) {
@@ -391,4 +387,4 @@
 
 	setupUI();
 	await initialize();
-})(window.Turbo, window.wkof);
+})(window);
