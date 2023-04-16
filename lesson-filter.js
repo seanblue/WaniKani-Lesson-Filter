@@ -214,12 +214,10 @@
 		}
 
 		currentLessonQueue = newFilteredQueue;
+		currentBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
 
-		let newBatchedSize = getCheckedBatchSize(rawFilterValues.batchSize);
-		currentBatchSize = newBatchedSize;
-
-		console.log(newFilteredQueue);
-		console.log(newBatchedSize);
+		console.log(currentLessonQueue);
+		console.log(currentBatchSize);
 
 		visitUrlForCurrentBatch();
 	}
@@ -236,8 +234,8 @@
 	function getFilteredQueue(rawFilterValues) {
 		let idToIndex = { };
 
-		for (let i = 0; i < currentLessonQueue.length; i++) {
-			idToIndex[currentLessonQueue[i].id] = i;
+		for (let i = 0; i < initialLessonQueue.length; i++) {
+			idToIndex[initialLessonQueue[i].id] = i;
 		}
 
 		let filteredRadicalQueue = getFilteredQueueForType(radicalSubjectType, rawFilterValues.radicals);
@@ -264,14 +262,14 @@
 	}
 
 	function getQueueForType(subjectType) {
-		return currentLessonQueue.filter(item => item.subjectType === subjectType);
+		return initialLessonQueue.filter(item => item.subjectType === subjectType);
 	}
 
 	function getCheckedBatchSize(rawValue) {
 		let value = parseInt(rawValue);
 
 		if (isNaN(value)) {
-			return currentBatchSize;
+			return initialBatchSize;
 		}
 
 		if (value < 1) {
@@ -333,10 +331,6 @@
 		localStorage[localStorageSettingsKey] = JSON.stringify(settings);
 	}
 
-	function disableWaniKaniKeyCommands(e) {
-		e.stopPropagation();
-	}
-
 	function isNewBatchUrl(url) {
 		return new URL(url).pathname === '/subjects/lesson';
 	}
@@ -363,7 +357,9 @@
 	});
 
 	window.addEventListener('turbo:before-render', function(e) {
+		e.preventDefault();
 		setupUI(e.detail.newBody);
+		e.detail.resume();
 	});
 
 	window.lessonFilter = Object.freeze({
