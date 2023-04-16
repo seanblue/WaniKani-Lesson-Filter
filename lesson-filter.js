@@ -113,8 +113,6 @@
 		currentLessonQueue = [...initialLessonQueue];
 		currentBatchSize = initialBatchSize;
 
-		console.log(currentLessonQueue);
-
 		return Promise.resolve('done');
 	}
 
@@ -221,9 +219,6 @@
 		currentLessonQueue = newFilteredQueue;
 		currentBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
 
-		console.log(currentLessonQueue);
-		console.log(currentBatchSize);
-
 		visitUrlForCurrentBatch();
 	}
 
@@ -306,14 +301,6 @@
 		}
 	}
 
-	async function resetInternal() {
-		await queueInitializedPromise;
-
-		currentLessonQueue = initialLessonQueue;
-		currentBatchSize = initialBatchSize;
-		visitUrlForCurrentBatch();
-	}
-
 	function visitUrlForCurrentBatch() {
 		if (currentLessonQueue.length === 0) {
 			global.Turbo.visit(`/dashboard`);
@@ -380,9 +367,6 @@
 			};
 
 			filterLessonsInternal(rawFilterValues);
-		},
-		reset: () => {
-			resetInternal();
 		}
 	});
 
