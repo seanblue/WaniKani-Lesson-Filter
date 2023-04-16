@@ -160,6 +160,11 @@
 			return;
 		}
 
+		let existingLessonFilterSection = body.querySelector('#lf-main');
+		if (existingLessonFilterSection) {
+			return;
+		}
+
 		body.querySelector('.subject-queue__items').insertAdjacentHTML('beforeend', html);
 
 		loadSavedInputData(body);
