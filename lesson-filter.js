@@ -165,7 +165,12 @@
 			return;
 		}
 
-		body.querySelector('.subject-queue__items').insertAdjacentHTML('beforeend', html);
+		let queueItemsSection = body.querySelector('.subject-queue__items');
+		if (!queueItemsSection) {
+			return;
+		}
+
+		queueItemsSection.insertAdjacentHTML('beforeend', html);
 
 		loadSavedInputData(body);
 		setupEvents(body);
