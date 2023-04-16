@@ -3,9 +3,9 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       1.9.2
-// @match        https://www.wanikani.com/subjects*
-// @match        https://preview.wanikani.com/subjects*
+// @version       2.0.0
+// @match         https://www.wanikani.com/subjects*
+// @match         https://preview.wanikani.com/subjects*
 // @grant         none
 // ==/UserScript==
 
