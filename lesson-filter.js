@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.0.0
+// @version       2.1.0
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -29,18 +29,28 @@
 		return;
 	}
 
-
 	const localStorageSettingsKey = 'lessonFilter_inputData';
 	const localStorageSettingsVersion = 2;
 
 	const radicalSubjectType = 'radical';
 	const kanjiSubjectType = 'kanji';
 	const vocabSubjectType = 'vocabulary';
+	const kanaVocabSubjectType = 'kana_vocabulary';
 
 	const batchSizeInputSelector = '#lf-batch-size';
 	const radicalInputSelector = '#lf-radical';
 	const kanjiInputSelector = '#lf-kanji';
 	const vocabInputSelector = '#lf-vocab';
+
+	const radicalCountSelector = '.subject-statistic-counts__item-count-text[data-category="Radical"]';
+	const kanjiCountSelector = '.subject-statistic-counts__item-count-text[data-category="Kanji"]';
+	const vocabCountSelector = '.subject-statistic-counts__item-count-text[data-category="Vocabulary"]';
+
+	const pages = {
+		lessonPage: 'lesson',
+		quizPage: 'quiz',
+		otherPage: 'other'
+	};
 
 	const style =
 		`<style>
@@ -134,10 +144,15 @@
 	}
 
 	function sortInitialLessonQueue(queue, lessonOrder) {
-		let typeOrder = [radicalSubjectType, kanjiSubjectType, vocabSubjectType];
+		let typeOrder = {
+			[radicalSubjectType]: 0,
+			[kanjiSubjectType]: 1,
+			[vocabSubjectType]: 2,
+			[kanaVocabSubjectType]: 2
+		};
 
 		if (lessonOrder === 'ascending_level_then_subject') {
-			return queue.sort((a, b) => a.level - b.level || typeOrder.indexOf(a.subjectType) - typeOrder.indexOf(b.subjectType) || a.lessonPosition - b.lessonPosition);
+			return queue.sort((a, b) => a.level - b.level || typeOrder[a.subjectType] - typeOrder[b.subjectType] || a.lessonPosition - b.lessonPosition);
 		}
 
 		shuffle(queue);
@@ -154,7 +169,12 @@
 	}
 
 	function setupUI(body) {
-		if (!onLessonPage(window.location)) {
+		let page = getPage(body);
+		if (page === pages.lesson || page === pages.quiz) {
+			updateItemCountsInUI(body);
+		}
+
+		if (page !== pages.lesson) {
 			return;
 		}
 
@@ -195,6 +215,14 @@
 		body.querySelector(vocabInputSelector).value = data.vocab;
 	}
 
+	function updateItemCountsInUI(body) {
+		var lessonQueueByType = getLessonQueueByType(currentLessonQueue);
+
+		body.querySelector(radicalCountSelector).innerText = lessonQueueByType[radicalSubjectType].length;
+		body.querySelector(kanjiCountSelector).innerText = lessonQueueByType[kanjiSubjectType].length;
+		body.querySelector(vocabCountSelector).innerText = lessonQueueByType[vocabSubjectType].length;
+	}
+
 	function setupEvents(body) {
 		body.querySelector('#lf-apply-filter').addEventListener('click', applyFilter);
 		body.querySelector('#lf-apply-shuffle').addEventListener('click', applyShuffle);
@@ -221,7 +249,6 @@
 
 		visitUrlForCurrentBatch();
 	}
-
 	function getRawFilterValuesFromUI(body) {
 		return {
 			'batchSize': body.querySelector(batchSizeInputSelector).value,
@@ -238,31 +265,39 @@
 			idToIndex[initialLessonQueue[i].id] = i;
 		}
 
-		let filteredRadicalQueue = getFilteredQueueForType(radicalSubjectType, rawFilterValues.radicals);
-		let filteredKanjiQueue = getFilteredQueueForType(kanjiSubjectType, rawFilterValues.kanji);
-		let filteredVocabQueue = getFilteredQueueForType(vocabSubjectType, rawFilterValues.vocab);
+		var lessonQueueByType = getLessonQueueByType(initialLessonQueue);
+
+		let filteredRadicalQueue = getFilteredQueueForType(lessonQueueByType[radicalSubjectType], rawFilterValues.radicals);
+		let filteredKanjiQueue = getFilteredQueueForType(lessonQueueByType[kanjiSubjectType], rawFilterValues.kanji);
+		let filteredVocabQueue = getFilteredQueueForType(lessonQueueByType[vocabSubjectType], rawFilterValues.vocab);
 
 		return filteredRadicalQueue.concat(filteredKanjiQueue).concat(filteredVocabQueue).sort((a, b) => idToIndex[a.id] - idToIndex[b.id]);
 	}
 
-	function getFilteredQueueForType(subjectType, rawFilterValue) {
+	function getLessonQueueByType(lessonQueue) {
+		return {
+			[radicalSubjectType]: getQueueForType(lessonQueue, [radicalSubjectType]),
+			[kanjiSubjectType]: getQueueForType(lessonQueue, [kanjiSubjectType]),
+			[vocabSubjectType]: getQueueForType(lessonQueue, [vocabSubjectType, kanaVocabSubjectType])
+		};
+	}
+
+	function getQueueForType(lessonQueue, subjectTypes) {
+		return lessonQueue.filter(item => subjectTypes.includes(item.subjectType));
+	}
+
+	function getFilteredQueueForType(queueForType, rawFilterValue) {
 		let filterValue = parseInt(rawFilterValue);
 
 		if (filterValue <= 0) {
 			return [];
 		}
 
-		let queueForType = getQueueForType(subjectType);
-
 		if (isNaN(filterValue)) {
 			return queueForType;
 		}
 
 		return queueForType.slice(0, filterValue);
-	}
-
-	function getQueueForType(subjectType) {
-		return initialLessonQueue.filter(item => item.subjectType === subjectType);
 	}
 
 	function getCheckedBatchSize(rawValue) {
@@ -327,8 +362,16 @@
 		return new URL(url).pathname === '/subjects/lesson';
 	}
 
-	function onLessonPage(location) {
-		return (/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname));
+	function getPage(location) {
+		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
+			return pages.lessonPage;
+		}
+
+		if ((/(\/?)subjects(\/\d+)\/quiz(\/?)/.test(location.pathname))) {
+			return pages.quizPage;
+		}
+
+		return pages.other;
 	}
 
 	function setsAreEqual(set1, set2) {
@@ -370,7 +413,7 @@
 		}
 	});
 
+	await initialize();
 	setupStyles(document.head);
 	setupUI(document.body);
-	await initialize();
 })(window);
