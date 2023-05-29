@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.0
+// @version       2.1.1
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -169,12 +169,12 @@
 	}
 
 	function setupUI(body) {
-		let page = getPage(body);
-		if (page === pages.lesson || page === pages.quiz) {
+		let page = getPage(window.location);
+		if (page === pages.lessonPage || page === pages.quizPage) {
 			updateItemCountsInUI(body);
 		}
 
-		if (page !== pages.lesson) {
+		if (page !== pages.lessonPage) {
 			return;
 		}
 
@@ -218,9 +218,18 @@
 	function updateItemCountsInUI(body) {
 		var lessonQueueByType = getLessonQueueByType(currentLessonQueue);
 
-		body.querySelector(radicalCountSelector).innerText = lessonQueueByType[radicalSubjectType].length;
-		body.querySelector(kanjiCountSelector).innerText = lessonQueueByType[kanjiSubjectType].length;
-		body.querySelector(vocabCountSelector).innerText = lessonQueueByType[vocabSubjectType].length;
+		updateItemCountInUI(body, radicalCountSelector, lessonQueueByType[radicalSubjectType]);
+		updateItemCountInUI(body, kanjiCountSelector, lessonQueueByType[kanjiSubjectType]);
+		updateItemCountInUI(body, vocabCountSelector, lessonQueueByType[vocabSubjectType]);
+	}
+
+	function updateItemCountInUI(body, selector, queueForType) {
+		let lessonQueueByType = getLessonQueueByType(currentLessonQueue);
+
+		let el = body.querySelector(selector);
+		if (el) {
+			el.innerText = queueForType.length;
+		}
 	}
 
 	function setupEvents(body) {
