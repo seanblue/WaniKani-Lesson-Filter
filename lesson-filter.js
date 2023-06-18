@@ -194,6 +194,18 @@
 		setupEvents(body);
 	}
 
+	function getPage(location) {
+		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
+			return pages.lessonPage;
+		}
+
+		if ((/(\/?)subjects\/lesson\/quiz(\/?)/.test(location.pathname))) {
+			return pages.quizPage;
+		}
+
+		return pages.other;
+	}
+
 	function loadSavedInputData(body) {
 		let savedDataString = localStorage[localStorageSettingsKey];
 
@@ -371,18 +383,6 @@
 
 	function isNewBatchUrl(url) {
 		return new URL(url).pathname === '/subjects/lesson';
-	}
-
-	function getPage(location) {
-		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
-			return pages.lessonPage;
-		}
-
-		if ((/(\/?)subjects(\/\d+)\/quiz(\/?)/.test(location.pathname))) {
-			return pages.quizPage;
-		}
-
-		return pages.other;
 	}
 
 	function setsAreEqual(set1, set2) {
