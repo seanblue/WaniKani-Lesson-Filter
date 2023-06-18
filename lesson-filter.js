@@ -6,6 +6,8 @@
 // @version       2.1.1
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
+// @match         https://www.wanikani.com
+// @match         https://www.wanikani.com/dashboard
 // @grant         none
 // ==/UserScript==
 
@@ -29,6 +31,7 @@
 		return;
 	}
 
+	const settingsScriptId = 'lesson_filter';
 	const localStorageSettingsKey = 'lessonFilter_inputData';
 	const localStorageSettingsVersion = 2;
 
@@ -46,10 +49,15 @@
 	const kanjiCountSelector = '.subject-statistic-counts__item-count-text[data-category="Kanji"]';
 	const vocabCountSelector = '.subject-statistic-counts__item-count-text[data-category="Vocabulary"]';
 
-	const pages = {
+	const pagesEnum = {
 		lessonPage: 'lesson',
 		quizPage: 'quiz',
-		otherPage: 'other'
+		dashboard: 'dashboard',
+		other: 'other'
+	};
+
+	const wkofSettingsEnum = {
+		removeKanaVocab: 'remove_kana_vocab'
 	};
 
 	const style =
@@ -98,6 +106,7 @@
 			</div>
 		</div>`;
 
+	let wkofSettingsLoadedPromise;
 	let queueInitializedPromise;
 
 	let initialLessonQueue;
@@ -106,41 +115,105 @@
 	let currentLessonQueue;
 	let currentBatchSize;
 
-	async function initialize() {
-		queueInitializedPromise = initializeLessonQueue();
-		await queueInitializedPromise;
+	async function handleInitialPageLoad() {
+		let pageOnInitialLoad = getPage();
+
+		if (pageOnInitialLoad === pagesEnum.dashboard) {
+			global.wkof.include('Settings, Menu');
+			let wkofSettingsDialog = await loadWkofSettings();
+			await addMenuOptions(wkofSettingsDialog);
+		}
+		else {
+			global.wkof.include('Apiv2, Settings, Menu');
+
+			initializeLessonQueue();
+			setupStyles(document.head);
+			setupUI(document.body);
+		}
 	}
 
-	async function initializeLessonQueue() {
-		global.wkof.include('Apiv2');
-		await global.wkof.ready('Apiv2');
+	async function addMenuOptions(wkofSettingsDialog) {
+		await global.wkof.ready('Menu');
 
-		let [ unsortedLessonQueue, userPreferences ] = await Promise.all([getUnsortedLessonQueue(), getUserPreferences()]);
+		global.wkof.Menu.insert_script_link({
+			name: settingsScriptId,
+			submenu: 'Settings',
+			title: 'Lesson Filter',
+			on_click: function() { wkofSettingsDialog.open(); }
+		});
+	}
 
-		initialBatchSize = userPreferences.batchSize;
-		initialLessonQueue = sortInitialLessonQueue(unsortedLessonQueue, userPreferences.lessonOrder);
+	function initializeLessonQueue() {
+		queueInitializedPromise = new Promise(async (resolve, reject) => {
+			let [ unsortedLessonQueue, userPreferences, wkofSettings ] = await Promise.all([getUnsortedLessonQueue(), getUserPreferences(), getWkofSettings()]);
 
-		currentLessonQueue = [...initialLessonQueue];
-		currentBatchSize = initialBatchSize;
+			initialBatchSize = userPreferences.batchSize;
+			initialLessonQueue = sortInitialLessonQueue(unsortedLessonQueue, userPreferences.lessonOrder);
 
-		return Promise.resolve('done');
+			currentLessonQueue = filterInitialQueueBasedOnWkofSettings(wkofSettings);
+			currentBatchSize = initialBatchSize;
+
+			visitUrlForCurrentBatch();
+
+			resolve('done');
+		});
+	}
+
+	function filterInitialQueueBasedOnWkofSettings(wkofSettings) {
+		if (wkofSettings[wkofSettingsEnum.removeKanaVocab]) {
+			return initialLessonQueue.filter(item => item.subjectType !== kanaVocabSubjectType);
+		}
+
+		return [...initialLessonQueue];
 	}
 
 	async function getUnsortedLessonQueue() {
+		await global.wkof.ready('Apiv2');
 		let summary = await global.wkof.Apiv2.fetch_endpoint('summary');
 		let lessonIds = summary.data.lessons.flatMap(l => l.subject_ids);
 
 		let lessonData = await global.wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
 
-		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position }));
+		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position, slug: d.data.slug }));
 	}
 
 	async function getUserPreferences() {
+		await global.wkof.ready('Apiv2');
 		let response = await global.wkof.Apiv2.fetch_endpoint('user');
 		return {
 			batchSize: response.data.preferences.lessons_batch_size,
 			lessonOrder: response.data.preferences.lessons_presentation_order
 		};
+	}
+
+	function loadWkofSettings() {
+		return new Promise(async (resolve, reject) => {
+			await global.wkof.ready('Settings');
+
+			let settings = {
+				[wkofSettingsEnum.removeKanaVocab]: { type: 'checkbox', label: 'Remove All Kana Vocab?', hover_tip: 'Select if you want to remove all kana vocab from the lesson queue' }
+			};
+
+			let defaultSettings = {
+				[wkofSettingsEnum.removeKanaVocab]: false
+			};
+
+			let wkofSettingsDialog = new global.wkof.Settings({
+				script_id: settingsScriptId,
+				title: 'Lesson Filter',
+				on_save: () => console.log('updated'),
+				content: settings
+			});
+
+			await wkofSettingsDialog.load(defaultSettings);
+
+			resolve(wkofSettingsDialog);
+		});
+	}
+
+	async function getWkofSettings() {
+		await loadWkofSettings();
+		return global.wkof.settings[settingsScriptId];
 	}
 
 	function sortInitialLessonQueue(queue, lessonOrder) {
@@ -168,13 +241,15 @@
 		head.insertAdjacentHTML('beforeend', style);
 	}
 
-	function setupUI(body) {
-		let page = getPage(window.location);
-		if (page === pages.lessonPage || page === pages.quizPage) {
+	async function setupUI(body) {
+		await queueInitializedPromise;
+
+		let page = getPage();
+		if (page === pagesEnum.lessonPage || page === pagesEnum.quizPage) {
 			updateItemCountsInUI(body);
 		}
 
-		if (page !== pages.lessonPage) {
+		if (page !== pagesEnum.lessonPage) {
 			return;
 		}
 
@@ -270,11 +345,13 @@
 	function getFilteredQueue(rawFilterValues) {
 		let idToIndex = { };
 
-		for (let i = 0; i < initialLessonQueue.length; i++) {
-			idToIndex[initialLessonQueue[i].id] = i;
+		let filteredInitialLessonQueue = filterInitialQueueBasedOnWkofSettings(initialLessonQueue);
+
+		for (let i = 0; i < filteredInitialLessonQueue.length; i++) {
+			idToIndex[filteredInitialLessonQueue[i].id] = i;
 		}
 
-		var lessonQueueByType = getLessonQueueByType(initialLessonQueue);
+		var lessonQueueByType = getLessonQueueByType(filteredInitialLessonQueue);
 
 		let filteredRadicalQueue = getFilteredQueueForType(lessonQueueByType[radicalSubjectType], rawFilterValues.radicals);
 		let filteredKanjiQueue = getFilteredQueueForType(lessonQueueByType[kanjiSubjectType], rawFilterValues.kanji);
@@ -347,7 +424,7 @@
 
 	function visitUrlForCurrentBatch() {
 		if (currentLessonQueue.length === 0) {
-			global.Turbo.visit(`/dashboard`);
+			global.Turbo.visit('/dashboard');
 		}
 
 		let lessonBatchQueryParam = getCurrentLessonBatchIds().join('-');
@@ -371,16 +448,22 @@
 		return new URL(url).pathname === '/subjects/lesson';
 	}
 
-	function getPage(location) {
-		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
-			return pages.lessonPage;
+	function getPage() {
+		let pathname = window.location.pathname;
+
+		if (pathname === '/' || pathname === '/dashboard') {
+			return pagesEnum.dashboard;
 		}
 
-		if ((/(\/?)subjects(\/\d+)\/quiz(\/?)/.test(location.pathname))) {
-			return pages.quizPage;
+		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(pathname))) {
+			return pagesEnum.lessonPage;
 		}
 
-		return pages.other;
+		if ((/(\/?)subjects(\/\d+)\/quiz(\/?)/.test(pathname))) {
+			return pagesEnum.quizPage;
+		}
+
+		return pagesEnum.other;
 	}
 
 	function setsAreEqual(set1, set2) {
@@ -422,7 +505,5 @@
 		}
 	});
 
-	await initialize();
-	setupStyles(document.head);
-	setupUI(document.body);
+	handleInitialPageLoad();
 })(window);
