@@ -49,7 +49,7 @@
 	const pages = {
 		lessonPage: 'lesson',
 		quizPage: 'quiz',
-		otherPage: 'other'
+		other: 'other'
 	};
 
 	const style =
