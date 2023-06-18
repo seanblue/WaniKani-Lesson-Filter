@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.1
+// @version       2.1.2
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -284,10 +284,12 @@
 	}
 
 	function getLessonQueueByType(lessonQueue) {
+		let vocabSubjectTypeGroup = localStorage.lessonFilter_skipKanaVocab ? [vocabSubjectType] : [vocabSubjectType, kanaVocabSubjectType];
+
 		return {
 			[radicalSubjectType]: getQueueForType(lessonQueue, [radicalSubjectType]),
 			[kanjiSubjectType]: getQueueForType(lessonQueue, [kanjiSubjectType]),
-			[vocabSubjectType]: getQueueForType(lessonQueue, [vocabSubjectType, kanaVocabSubjectType])
+			[vocabSubjectType]: getQueueForType(lessonQueue, vocabSubjectTypeGroup)
 		};
 	}
 
