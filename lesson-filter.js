@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.2
+// @version       2.1.3
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -258,15 +258,22 @@
 	async function filterLessonsInternal(rawFilterValues) {
 		await queueInitializedPromise;
 
+		let newBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
+
+		if (newBatchSize === null || newBatchSize < 1) {
+			alert('Batch size must be a positive number');
+			return;
+		}
+
 		let newFilteredQueue = getFilteredQueue(rawFilterValues);
 
 		if (newFilteredQueue.length === 0) {
-			alert('You cannot remove all lessons');
+			alert('Cannot remove all lessons');
 			return;
 		}
 
 		currentLessonQueue = newFilteredQueue;
-		currentBatchSize = getCheckedBatchSize(rawFilterValues.batchSize);
+		currentBatchSize = newBatchSize;
 
 		visitUrlForCurrentBatch();
 	}
@@ -327,11 +334,7 @@
 		let value = parseInt(rawValue);
 
 		if (isNaN(value)) {
-			return initialBatchSize;
-		}
-
-		if (value < 1) {
-			return 1;
+			return null;
 		}
 
 		return value;
