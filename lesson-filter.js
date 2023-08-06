@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.3
+// @version       2.1.4
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -249,10 +249,13 @@
 		body.querySelector('#lf-apply-shuffle').addEventListener('click', applyShuffle);
 	}
 
-	function applyFilter(e) {
+	async function applyFilter(e) {
 		let rawFilterValues = getRawFilterValuesFromUI(document);
-		filterLessonsInternal(rawFilterValues);
-		saveRawFilterValues(rawFilterValues);
+		let filtered = await filterLessonsInternal(rawFilterValues);
+
+		if (filtered) {
+			saveRawFilterValues(rawFilterValues);
+		}
 	}
 
 	async function filterLessonsInternal(rawFilterValues) {
@@ -262,27 +265,29 @@
 
 		if (newBatchSize === null || newBatchSize < 1) {
 			alert('Batch size must be a positive number');
-			return;
+			return false;
 		}
 
 		let newFilteredQueue = getFilteredQueue(rawFilterValues);
 
 		if (newFilteredQueue.length === 0) {
 			alert('Cannot remove all lessons');
-			return;
+			return false;
 		}
 
 		currentLessonQueue = newFilteredQueue;
 		currentBatchSize = newBatchSize;
 
 		visitUrlForCurrentBatch();
+
+		return true;
 	}
 	function getRawFilterValuesFromUI(body) {
 		return {
-			'batchSize': body.querySelector(batchSizeInputSelector).value,
-			'radicals': body.querySelector(radicalInputSelector).value,
-			'kanji': body.querySelector(kanjiInputSelector).value,
-			'vocab': body.querySelector(vocabInputSelector).value
+			'batchSize': body.querySelector(batchSizeInputSelector).value.trim(),
+			'radicals': body.querySelector(radicalInputSelector).value.trim(),
+			'kanji': body.querySelector(kanjiInputSelector).value.trim(),
+			'vocab': body.querySelector(vocabInputSelector).value.trim()
 		};
 	}
 
@@ -331,6 +336,10 @@
 	}
 
 	function getCheckedBatchSize(rawValue) {
+		if (rawValue === '') {
+			return initialBatchSize;
+		}
+
 		let value = parseInt(rawValue);
 
 		if (isNaN(value)) {
