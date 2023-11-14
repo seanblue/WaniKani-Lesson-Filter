@@ -3,9 +3,9 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.4
-// @match         https://www.wanikani.com/subjects*
-// @match         https://preview.wanikani.com/subjects*
+// @version       2.2.0
+// @match         https://www.wanikani.com/subject-lessons*
+// @match         https://preview.wanikani.com/subject-lessons*
 // @grant         none
 // ==/UserScript==
 
@@ -98,7 +98,7 @@
 			</div>
 		</div>`;
 
-	let queueInitializedPromise;
+		let queueInitializedPromise;
 
 	let initialLessonQueue;
 	let initialBatchSize;
@@ -132,7 +132,7 @@
 
 		let lessonData = await global.wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
 
-		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position }));
+		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, characters: d.data.characters, readings: d.data.readings, slug: d.data.slug, lessonPosition: d.data.lesson_position }));
 	}
 
 	async function getUserPreferences() {
@@ -178,6 +178,9 @@
 			return;
 		}
 
+        // modify the batch at the bottom of the lesson page
+        modifyLessonPageBatch(currentLessonQueue[0].id, currentLessonQueue.slice(0, currentBatchSize), body, document.URL);
+
 		let existingLessonFilterSection = body.querySelector('#lf-main');
 		if (existingLessonFilterSection) {
 			return;
@@ -194,12 +197,36 @@
 		setupEvents(body);
 	}
 
+    // function taken and modified from Wanikani Queue Manipulator by Sinyaven under MIT license
+    function modifyLessonPageBatch(currentId, batch, body, url) {
+		let currentIdIndex = batch.findIndex(b => b.id === currentId);
+		let quizLink = `quiz?queue=${batch.map(q => q.id).join(`-`)}`;
+		body.querySelector(`.subject-slide__navigation[data-subject-slides-target="prevButton"]`).href = url.replace(/\/\d+$/, `/${batch[Math.max(0, currentIdIndex - 1)].id}`);
+		[...body.querySelectorAll(`.subject-slide__navigation[data-subject-slides-target="nextButton"]`)].pop().href = url.replace(/\/\d+$/, `/${batch[currentIdIndex + 1]?.id ?? quizLink}`);
+		body.querySelectorAll(`.subject-queue__item:not(:last-child)`).forEach(q => q.remove());
+		body.querySelector(`.subject-queue__item a`).href = quizLink;
+		body.querySelector(`.subject-queue__item`).before(...batch.map(b => {
+			let li = document.createElement(`li`);
+			li.classList.add(`subject-queue__item`);
+			li.setAttribute(`data-subject-queue-target`, `item`);
+			li.innerHTML = `<a class="subject-character subject-character--${b.subjectType.replace(`kana_vocabulary`, `vocabulary`)} subject-character--tiny subject-character--unlocked"
+			                   title="${b.readings?.[0].reading ?? b.slug}"
+							   href="${url.replace(/\/\d+$/, `/${b.id}`)}"
+							   data-turbo-frame="_blank">
+							    <div class="subject-character__content">
+								    <span class="subject-character__characters" lang="ja">${b.characters ?? b.slug}</span>
+								</div>
+							</a>`;
+			return li;
+		}));
+	}
+
 	function getPage(location) {
-		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
+		if ((/\/?subject-lessons\/[\d-]+\/\d+/.test(location.pathname))) {
 			return pages.lessonPage;
 		}
 
-		if ((/(\/?)subjects\/lesson\/quiz(\/?)/.test(location.pathname))) {
+		if ((/\/?subject-lessons\/[\d-]+\/quiz/.test(location.pathname))) {
 			return pages.quizPage;
 		}
 
@@ -236,7 +263,7 @@
 	}
 
 	function updateItemCountInUI(body, selector, queueForType) {
-		let lessonQueueByType = getLessonQueueByType(currentLessonQueue);
+		let lessonQueueByType = getLessonQueueByType(currentLessonQueue); // do we need this? it's not used
 
 		let el = body.querySelector(selector);
 		if (el) {
@@ -256,6 +283,15 @@
 		if (filtered) {
 			saveRawFilterValues(rawFilterValues);
 		}
+	}
+
+    function getRawFilterValuesFromUI(body) {
+		return {
+			'batchSize': body.querySelector(batchSizeInputSelector).value.trim(),
+			'radicals': body.querySelector(radicalInputSelector).value.trim(),
+			'kanji': body.querySelector(kanjiInputSelector).value.trim(),
+			'vocab': body.querySelector(vocabInputSelector).value.trim()
+		};
 	}
 
 	async function filterLessonsInternal(rawFilterValues) {
@@ -281,14 +317,6 @@
 		visitUrlForCurrentBatch();
 
 		return true;
-	}
-	function getRawFilterValuesFromUI(body) {
-		return {
-			'batchSize': body.querySelector(batchSizeInputSelector).value.trim(),
-			'radicals': body.querySelector(radicalInputSelector).value.trim(),
-			'kanji': body.querySelector(kanjiInputSelector).value.trim(),
-			'vocab': body.querySelector(vocabInputSelector).value.trim()
-		};
 	}
 
 	function getFilteredQueue(rawFilterValues) {
@@ -376,12 +404,12 @@
 			global.Turbo.visit(`/dashboard`);
 		}
 
-		let lessonBatchQueryParam = getCurrentLessonBatchIds().join('-');
-		global.Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
+        let url = document.URL.replace(/\/[^\/]+$/, `/${currentLessonQueue[0].id}`);
+        global.Turbo.visit(url);
 	}
 
 	function getCurrentLessonBatchIds() {
-		return currentLessonQueue.slice(0, currentBatchSize).map(item => item.id);
+		return currentLessonQueue.map(item => item.id);
 	}
 
 	function saveRawFilterValues(rawFilterValues) {
@@ -394,31 +422,13 @@
 	}
 
 	function isNewBatchUrl(url) {
-		return new URL(url).pathname === '/subjects/lesson';
+		return getPage(new URL(document.URL)) !== pages.lessonPage && getPage(new URL(url)) === pages.lessonPage;
 	}
 
+    // this is never used
 	function setsAreEqual(set1, set2) {
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
-
-	window.addEventListener('turbo:before-visit', function(e) {
-		if (isNewBatchUrl(e.detail.url)) {
-			e.preventDefault();
-
-			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds());
-
-			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-			currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-
-			visitUrlForCurrentBatch();
-		}
-	});
-
-	window.addEventListener('turbo:before-render', function(e) {
-		e.preventDefault();
-		setupUI(e.detail.newBody);
-		e.detail.resume();
-	});
 
 	window.lessonFilter = Object.freeze({
 		shuffle: () => {
@@ -439,4 +449,24 @@
 	await initialize();
 	setupStyles(document.head);
 	setupUI(document.body);
+
+    // declare turbo event listeners after awaiting initialize so they do not try to call functions before queue initialization on first page load.
+    window.addEventListener('turbo:before-visit', function(e) {
+		if (isNewBatchUrl(e.detail.url)) {
+			e.preventDefault();
+
+			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds().slice(0, currentBatchSize));
+
+			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+			currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+
+			visitUrlForCurrentBatch();
+		}
+	});
+
+	window.addEventListener('turbo:before-render', function(e) {
+		e.preventDefault();
+		setupUI(e.detail.newBody);
+		e.detail.resume();
+	});
 })(window);
