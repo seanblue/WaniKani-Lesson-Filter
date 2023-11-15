@@ -60,7 +60,7 @@
 
 			.lf-list { margin: 0px; padding: 0px; }
 			.lf-list-item { display: inline-block; list-style: none; text-align: center; padding: 8px; }
-			.lf-list-item input { display: block; width: 45px; color: var(--color-text-dark, --color-text); border-width: 2px; border-style: inset; text-align: center;}
+			.lf-list-item input { display: block; width: 45px; color: var(--color-character-text); border-width: 2px; border-style: inset; text-align: center;}
 			.lf-list-item span { display: block; padding-bottom: 3px; }
 			#lf-batch-size { background-color: #ff5500; }
 			#lf-radical { background-color: var(--color-radical); }
