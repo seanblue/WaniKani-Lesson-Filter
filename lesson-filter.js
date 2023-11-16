@@ -3,7 +3,7 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.4
+// @version       2.1.5
 // @match         https://www.wanikani.com/subjects*
 // @match         https://preview.wanikani.com/subjects*
 // @grant         none
@@ -54,21 +54,23 @@
 
 	const style =
 		`<style>
-			#lf-main { width: 100%; margin: 10px auto; padding: 10px 20px; border-radius: 6px; text-align: center; background-color: #444; color: #fff; }
+			#lf-main { width: 100%; margin: 10px auto; padding: 10px 20px; border-radius: 6px; text-align: center; background-color: var(--color-wk-panel-background, #444); color: var(--color-text, #fff); }
 
 			.lf-title { font-size: 1.6em; font-weight: bold; padding-bottom: 5px; }
 
 			.lf-list { margin: 0px; padding: 0px; }
 			.lf-list-item { display: inline-block; list-style: none; text-align: center; padding: 8px; }
-			.lf-list-item input { display: block; width: 45px; color: #fff; border-width: 2px; border-style: inset; }
+			.lf-list-item input { display: block; width: 45px; color: var(--color-character-text); border-width: 2px; border-style: inset; text-align: center;}
 			.lf-list-item span { display: block; padding-bottom: 3px; }
 			#lf-batch-size { background-color: #ff5500; }
-			#lf-radical { background-color: #0af; }
-			#lf-kanji { background-color: #f0a; }
-			#lf-vocab { background-color: #a0f; }
+			#lf-radical { background-color: var(--color-radical); }
+			#lf-kanji { background-color: var(--color-kanji); }
+			#lf-vocab { background-color: var(--color-vocabulary); }
 
 			.lf-filter-section { padding-top: 10px; }
-			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 3px; border-width: 2px; border-style: outset; border-radius: 6px; }
+			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 5px; border: 2px outset var(--color-button-default-border, --color-text); border-radius: 6px; width: auto;}
+            .lf-filter-section input:hover { border-color: var(--color-button-default-hover-border); color: var(--color-button-default-hover-text); }
+            .lf-filter-section input:active { color: var(--color-button-default-active-text); }
 		</style>`;
 
 	const html =
@@ -93,8 +95,8 @@
 				</div>
 			</div>
 			<div class="lf-filter-section">
-				<input type="button" value="Filter" id="lf-apply-filter"></input>
-				<input type="button" value="Shuffle" id="lf-apply-shuffle"></input>
+				<input class="wk-button" type="button" value="Filter" id="lf-apply-filter"></input>
+				<input class="wk-button" type="button" value="Shuffle" id="lf-apply-shuffle"></input>
 			</div>
 		</div>`;
 
