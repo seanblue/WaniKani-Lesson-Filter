@@ -181,7 +181,7 @@
 		}
 
         // modify the batch at the bottom of the lesson page
-        if (currentLessonQueue) {
+        if (currentLessonQueue && currentLessonQueue.length !== 0) {
             modifyLessonPageBatch(currentIdFromLessonUrl(document.URL), currentLessonQueue.slice(0, currentBatchSize), body, document.URL);
 		}
 
@@ -273,7 +273,7 @@
 	}
 
 	function updateItemCountInUI(body, selector, queueForType) {
-		let lessonQueueByType = getLessonQueueByType(currentLessonQueue); // do we need this? it's not used
+		let lessonQueueByType = getLessonQueueByType(currentLessonQueue);
 
 		let el = body.querySelector(selector);
 		if (el) {
@@ -410,7 +410,7 @@
 	}
 
 	function visitUrlForCurrentBatch() {
-		if (currentLessonQueue.length === 0) {
+		if (initialLessonQueue.length === 0) { // if after filtering the just learned items out we have no more to learn
 			global.Turbo.visit(`/dashboard`);
 		}
 
@@ -435,7 +435,6 @@
 		return getPage(new URL(document.URL)) !== pages.lessonPage && getPage(new URL(url)) === pages.lessonPage;
 	}
 
-    // this is never used
 	function setsAreEqual(set1, set2) {
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
