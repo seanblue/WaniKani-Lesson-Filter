@@ -3,16 +3,16 @@
 // @namespace     https://www.wanikani.com
 // @description   Filter your lessons by type, while maintaining WaniKani's lesson order.
 // @author        seanblue
-// @version       2.1.4
-// @match         https://www.wanikani.com/subjects*
-// @match         https://preview.wanikani.com/subjects*
+// @version       2.2.0
+// @match         https://www.wanikani.com/subject-lessons*
+// @match         https://preview.wanikani.com/subject-lessons*
 // @grant         none
 // ==/UserScript==
 
 (async function(global) {
 	'use strict';
 
-	var wkofMinimumVersion = '1.1.0';
+	var wkofMinimumVersion = '1.1.8';
 
 	if (!global.wkof) {
 		var response = confirm('WaniKani Lesson Filter requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
@@ -55,9 +55,7 @@
 	const style =
 		`<style>
 			#lf-main { width: 100%; margin: 10px auto; padding: 10px 20px; border-radius: 6px; text-align: center; background-color: #444; color: #fff; }
-
 			.lf-title { font-size: 1.6em; font-weight: bold; padding-bottom: 5px; }
-
 			.lf-list { margin: 0px; padding: 0px; }
 			.lf-list-item { display: inline-block; list-style: none; text-align: center; padding: 8px; }
 			.lf-list-item input { display: block; width: 45px; color: #fff; border-width: 2px; border-style: inset; }
@@ -66,7 +64,6 @@
 			#lf-radical { background-color: #0af; }
 			#lf-kanji { background-color: #f0a; }
 			#lf-vocab { background-color: #a0f; }
-
 			.lf-filter-section { padding-top: 10px; }
 			.lf-filter-section input { font-size: 0.9em; margin: 0px 10px; padding: 3px; border-width: 2px; border-style: outset; border-radius: 6px; }
 		</style>`;
@@ -106,6 +103,8 @@
 	let currentLessonQueue;
 	let currentBatchSize;
 
+    let modifiedLessonStart = false; // flag to notify that lessonQuiz => next lesson batch visit was already modified and should not be modified again (and again, and again, ...)
+
 	async function initialize() {
 		queueInitializedPromise = initializeLessonQueue();
 		await queueInitializedPromise;
@@ -132,7 +131,7 @@
 
 		let lessonData = await global.wkof.Apiv2.fetch_endpoint('subjects', { filters: { ids: lessonIds } });
 
-		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, lessonPosition: d.data.lesson_position }));
+		return lessonData.data.map(d => ({ id: d.id, level: d.data.level, subjectType: d.object, characters: d.data.characters, readings: d.data.readings, slug: d.data.slug, lessonPosition: d.data.lesson_position }));
 	}
 
 	async function getUserPreferences() {
@@ -178,6 +177,11 @@
 			return;
 		}
 
+        // modify the batch at the bottom of the lesson page
+        if (currentLessonQueue) {
+            modifyLessonPageBatch(currentIdFromLessonUrl(document.URL), currentLessonQueue.slice(0, currentBatchSize), body, document.URL);
+        }
+
 		let existingLessonFilterSection = body.querySelector('#lf-main');
 		if (existingLessonFilterSection) {
 			return;
@@ -194,12 +198,42 @@
 		setupEvents(body);
 	}
 
+    // function taken and modified from Wanikani Queue Manipulator by Sinyaven under MIT license
+    function modifyLessonPageBatch(currentId, batch, body, url) {
+		let currentIdIndex = batch.findIndex(b => b.id === currentId);
+		let quizLink = `quiz?queue=${batch.map(q => q.id).join(`-`)}`;
+		body.querySelector(`.subject-slide__navigation[data-subject-slides-target="prevButton"]`).href = url.replace(/\/\d+$/, `/${batch[Math.max(0, currentIdIndex - 1)].id}`);
+		[...body.querySelectorAll(`.subject-slide__navigation[data-subject-slides-target="nextButton"]`)].pop().href = url.replace(/\/\d+$/, `/${batch[currentIdIndex + 1]?.id ?? quizLink}`);
+		body.querySelectorAll(`.subject-queue__item:not(:last-child)`).forEach(q => q.remove());
+		body.querySelector(`.subject-queue__item a`).href = quizLink;
+		body.querySelector(`.subject-queue__item`).before(...batch.map(b => {
+			let li = document.createElement(`li`);
+			li.classList.add(`subject-queue__item`);
+			li.setAttribute(`data-subject-queue-target`, `item`);
+			li.innerHTML = `<a class="subject-character subject-character--${b.subjectType.replace(`kana_vocabulary`, `vocabulary`)} subject-character--tiny subject-character--unlocked"
+			                   title="${b.readings?.[0].reading ?? b.slug}"
+							   href="${url.replace(/\/\d+$/, `/${b.id}`)}"
+							   data-turbo-frame="_blank">
+							    <div class="subject-character__content">
+								    <span class="subject-character__characters" lang="ja">${b.characters ?? b.slug}</span>
+								</div>
+							</a>`;
+			return li;
+		}));
+	}
+
+    // function taken from Wanikani Queue Manipulator by Sinyaven under MIT license
+    function currentIdFromLessonUrl(url) {
+		let id = url.match(/wanikani.com\/subject-lessons\/[\d-]+\/(\d+)/)?.[1];
+		return id == null ? null : parseInt(id);
+	}
+
 	function getPage(location) {
-		if ((/(\/?)subjects(\/\d+)\/lesson(\/?)/.test(location.pathname))) {
+		if ((/\/?subject-lessons\/[\d-]+\/\d+/.test(location.pathname))) {
 			return pages.lessonPage;
 		}
 
-		if ((/(\/?)subjects\/lesson\/quiz(\/?)/.test(location.pathname))) {
+		if ((/\/?subject-lessons\/[\d-]+\/quiz/.test(location.pathname))) {
 			return pages.quizPage;
 		}
 
@@ -258,6 +292,15 @@
 		}
 	}
 
+    function getRawFilterValuesFromUI(body) {
+		return {
+			'batchSize': body.querySelector(batchSizeInputSelector).value.trim(),
+			'radicals': body.querySelector(radicalInputSelector).value.trim(),
+			'kanji': body.querySelector(kanjiInputSelector).value.trim(),
+			'vocab': body.querySelector(vocabInputSelector).value.trim()
+		};
+	}
+
 	async function filterLessonsInternal(rawFilterValues) {
 		await queueInitializedPromise;
 
@@ -281,14 +324,6 @@
 		visitUrlForCurrentBatch();
 
 		return true;
-	}
-	function getRawFilterValuesFromUI(body) {
-		return {
-			'batchSize': body.querySelector(batchSizeInputSelector).value.trim(),
-			'radicals': body.querySelector(radicalInputSelector).value.trim(),
-			'kanji': body.querySelector(kanjiInputSelector).value.trim(),
-			'vocab': body.querySelector(vocabInputSelector).value.trim()
-		};
 	}
 
 	function getFilteredQueue(rawFilterValues) {
@@ -372,16 +407,17 @@
 	}
 
 	function visitUrlForCurrentBatch() {
-		if (currentLessonQueue.length === 0) {
+		if (initialLessonQueue.length === 0 || currentLessonQueue.length === 0) {
 			global.Turbo.visit(`/dashboard`);
 		}
 
-		let lessonBatchQueryParam = getCurrentLessonBatchIds().join('-');
-		global.Turbo.visit(`/subjects/${currentLessonQueue[0].id}/lesson?queue=${lessonBatchQueryParam}`);
+        let url = document.URL.replace(/\/[^\/]+$/, `/${currentLessonQueue[0].id}`);
+        modifiedLessonStart = true;
+        global.Turbo.visit(url);
 	}
 
 	function getCurrentLessonBatchIds() {
-		return currentLessonQueue.slice(0, currentBatchSize).map(item => item.id);
+		return currentLessonQueue.map(item => item.id);
 	}
 
 	function saveRawFilterValues(rawFilterValues) {
@@ -394,31 +430,13 @@
 	}
 
 	function isNewBatchUrl(url) {
-		return new URL(url).pathname === '/subjects/lesson';
+        // current url is not lesson page and new url is lesson page
+		return getPage(new URL(document.URL)) !== pages.lessonPage && getPage(new URL(url)) === pages.lessonPage;
 	}
 
 	function setsAreEqual(set1, set2) {
 		return set1.size === set2.size && [...set1].every(v => set2.has(v));
 	}
-
-	window.addEventListener('turbo:before-visit', function(e) {
-		if (isNewBatchUrl(e.detail.url)) {
-			e.preventDefault();
-
-			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds());
-
-			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-			currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-
-			visitUrlForCurrentBatch();
-		}
-	});
-
-	window.addEventListener('turbo:before-render', function(e) {
-		e.preventDefault();
-		setupUI(e.detail.newBody);
-		e.detail.resume();
-	});
 
 	window.lessonFilter = Object.freeze({
 		shuffle: () => {
@@ -439,4 +457,26 @@
 	await initialize();
 	setupStyles(document.head);
 	setupUI(document.body);
+
+    // declare turbo event listeners after awaiting initialize so they do not try to call functions before queue initialization on first page load.
+    window.addEventListener('turbo:before-visit', function(e) {
+        let nextLessonBatch = isNewBatchUrl(e.detail.url) && !modifiedLessonStart;
+        modifiedLessonStart = false;
+		if (nextLessonBatch) {
+			e.preventDefault();
+
+			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds().slice(0, currentBatchSize));
+
+			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+			currentLessonQueue = [...initialLessonQueue];
+
+			visitUrlForCurrentBatch();
+		}
+	});
+
+	window.addEventListener('turbo:before-render', function(e) {
+		e.preventDefault();
+		setupUI(e.detail.newBody);
+		e.detail.resume();
+	});
 })(window);
