@@ -12,7 +12,7 @@
 (async function(global) {
 	'use strict';
 
-	var wkofMinimumVersion = '1.1.0';
+	var wkofMinimumVersion = '1.1.8';
 
 	if (!global.wkof) {
 		var response = confirm('WaniKani Lesson Filter requires WaniKani Open Framework.\n Click "OK" to be forwarded to installation instructions.');
@@ -100,13 +100,15 @@
 			</div>
 		</div>`;
 
-		let queueInitializedPromise;
+	let queueInitializedPromise;
 
 	let initialLessonQueue;
 	let initialBatchSize;
 
 	let currentLessonQueue;
 	let currentBatchSize;
+
+    let modifiedLessonStart = false; // flag to notify that lessonQuiz => next lesson batch visit was already modified and should not be modified again (and again, and again, ...)
 
 	async function initialize() {
 		queueInitializedPromise = initializeLessonQueue();
@@ -181,9 +183,9 @@
 		}
 
         // modify the batch at the bottom of the lesson page
-        if (currentLessonQueue && currentLessonQueue.length !== 0) {
+        if (currentLessonQueue) {
             modifyLessonPageBatch(currentIdFromLessonUrl(document.URL), currentLessonQueue.slice(0, currentBatchSize), body, document.URL);
-		}
+        }
 
 		let existingLessonFilterSection = body.querySelector('#lf-main');
 		if (existingLessonFilterSection) {
@@ -410,11 +412,12 @@
 	}
 
 	function visitUrlForCurrentBatch() {
-		if (initialLessonQueue.length === 0) { // if after filtering the just learned items out we have no more to learn
+		if (initialLessonQueue.length === 0 || currentLessonQueue.length === 0) {
 			global.Turbo.visit(`/dashboard`);
 		}
 
         let url = document.URL.replace(/\/[^\/]+$/, `/${currentLessonQueue[0].id}`);
+        modifiedLessonStart = true;
         global.Turbo.visit(url);
 	}
 
@@ -432,6 +435,7 @@
 	}
 
 	function isNewBatchUrl(url) {
+        // current url is not lesson page and new url is lesson page
 		return getPage(new URL(document.URL)) !== pages.lessonPage && getPage(new URL(url)) === pages.lessonPage;
 	}
 
@@ -461,13 +465,15 @@
 
     // declare turbo event listeners after awaiting initialize so they do not try to call functions before queue initialization on first page load.
     window.addEventListener('turbo:before-visit', function(e) {
-		if (isNewBatchUrl(e.detail.url)) {
+        let nextLessonBatch = isNewBatchUrl(e.detail.url) && !modifiedLessonStart;
+        modifiedLessonStart = false;
+		if (nextLessonBatch) {
 			e.preventDefault();
 
 			let currentLessonBatchIdSet = new Set(getCurrentLessonBatchIds().slice(0, currentBatchSize));
 
 			initialLessonQueue = initialLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
-			currentLessonQueue = currentLessonQueue.filter(item => !currentLessonBatchIdSet.has(item.id));
+			currentLessonQueue = [...initialLessonQueue];
 
 			visitUrlForCurrentBatch();
 		}
